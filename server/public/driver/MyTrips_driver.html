@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>My Trips | TruFleetX Pilot</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+:root{--primary:#0F172A;--accent:#2563EB;--accent-soft:#EFF6FF;--bg-body:#F1F5F9;--bg-card:#FFFFFF;--text-main:#1E293B;--text-muted:#64748B;--success:#10B981;--warning:#F59E0B;--danger:#EF4444;--sidebar-width:280px;--sidebar-collapsed:80px;--header-height:80px;--shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);--shadow-card:0 4px 6px -1px rgba(0,0,0,.05),0 2px 4px -1px rgba(0,0,0,.03);--shadow-hover:0 20px 25px -5px rgba(0,0,0,.07),0 10px 10px -5px rgba(0,0,0,.02);--radius-lg:20px;--radius-md:12px;--spring:all .4s cubic-bezier(.34,1.56,.64,1);--smooth:all .3s cubic-bezier(.4,0,.2,1);}
+*{margin:0;padding:0;box-sizing:border-box;outline:none}
+body{font-family:'Inter',sans-serif;background:var(--bg-body);color:var(--text-main);overflow-x:hidden}
+.app{display:grid;grid-template-columns:var(--sidebar-width) 1fr;transition:grid-template-columns .4s ease;min-height:100vh}
+.app.collapsed{grid-template-columns:var(--sidebar-collapsed) 1fr}
+aside{background:var(--bg-card);border-right:1px solid #E2E8F0;padding:1.5rem 1rem;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:50;transition:var(--smooth);overflow:hidden}
+.brand-logo{display:flex;align-items:center;gap:12px;padding:0 1rem 2.5rem;color:var(--primary);text-decoration:none;font-family:'Outfit',sans-serif;font-weight:700;font-size:1.4rem;white-space:nowrap;overflow:hidden}
+.brand-text{font-family:'Outfit',sans-serif;font-weight:600;font-size:1rem;transition:opacity .2s}
+.app.collapsed .brand-text{opacity:0;pointer-events:none;width:0;overflow:hidden}
+.nav-menu{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:0}
+.nav-label{padding:.9rem 1rem .3rem;font-size:.68rem;font-weight:600;color:#CBD5E1;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;overflow:hidden}
+.app.collapsed .nav-label{opacity:0}
+.nav-item{display:flex;align-items:center;gap:16px;padding:11px 16px;color:var(--text-muted);text-decoration:none;border-radius:10px;transition:.25s;font-weight:500;white-space:nowrap;overflow:hidden}
+.nav-item:hover,.nav-item.active{background:#EFF6FF;color:var(--accent)}
+.nav-item i{font-size:1.05rem;min-width:22px;text-align:center;flex-shrink:0}
+.nav-spacer{flex-grow:1}
+main{padding:0;overflow-y:auto;height:100vh}
+header{height:var(--header-height);background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,.6);position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:0 2rem}
+.hdr-left{display:flex;align-items:center;gap:1rem}
+.toggle-btn{background:transparent;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-muted);padding:8px;border-radius:8px;transition:.2s}
+.toggle-btn:hover{background:var(--accent-soft);color:var(--accent)}
+.page-title{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.2rem;color:var(--primary)}
+.page-sub{font-size:.75rem;color:var(--text-muted);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:1.25rem}
+.profile-chip{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 7px;background:#fff;border:1px solid #E2E8F0;border-radius:30px;cursor:pointer;transition:var(--smooth)}
+.profile-chip:hover{border-color:var(--accent)}
+.profile-img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+.pname{font-weight:600;font-size:.85rem;color:var(--primary);line-height:1.15}
+.prole{font-size:.7rem;color:var(--text-muted)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;animation:ldot 2.2s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.3}}
+.content{padding:2rem;max-width:1400px;margin:0 auto;opacity:0;animation:fadeIn .55s ease-out forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.25rem;margin-bottom:2rem}
+.stat-card{background:var(--bg-card);padding:1.25rem 1.5rem;border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);display:flex;align-items:center;gap:14px;transition:var(--spring)}
+.stat-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover)}
+.si{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.ic-b{background:#EFF6FF;color:#2563EB}.ic-g{background:#ECFDF5;color:#10B981}.ic-o{background:#FFF7ED;color:#F59E0B}
+.sv{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:700;color:var(--primary);display:block}
+.sl{font-size:.8rem;color:var(--text-muted)}
+.panel{background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);padding:1.5rem}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.pt{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.05rem;color:var(--primary);display:flex;align-items:center;gap:8px}
+.tabs{display:flex;background:#F1F5F9;border-radius:10px;padding:3px;gap:2px}
+.tab{padding:7px 18px;border-radius:8px;border:none;background:transparent;font-size:.85rem;font-weight:600;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;gap:6px;transition:.2s;font-family:'Inter',sans-serif}
+.tab.active{background:#fff;color:var(--accent);box-shadow:var(--shadow-sm)}
+.cnt{font-size:.7rem;padding:2px 7px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-weight:700}
+.badge{font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px}
+.bb{background:#EFF6FF;color:#2563EB}.bg{background:#ECFDF5;color:#10B981}.bo{background:#FFF7ED;color:#F59E0B}.br{background:#FEF2F2;color:#EF4444}.bmo{background:#F1F5F9;color:#64748B}
+.trip-card{border:1.5px solid #E2E8F0;border-radius:var(--radius-md);padding:1.125rem;margin-bottom:.75rem;transition:var(--smooth);cursor:pointer}
+.trip-card:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.06);transform:translateY(-1px)}
+.tc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.route-txt{font-weight:600;font-size:.95rem;flex:1;margin:0 .75rem}
+.tc-meta{display:flex;flex-wrap:wrap;gap:.5rem;font-size:.78rem;color:var(--text-muted)}
+.tc-meta span{display:flex;align-items:center;gap:4px}
+.route-line{display:flex;align-items:center;gap:8px;margin:6px 0 8px}
+.rdot{width:8px;height:8px;border-radius:50%}
+.rline{flex:1;height:1.5px;background:linear-gradient(90deg,var(--accent),var(--success))}
+.prog-bar{height:4px;border-radius:20px;background:#E2E8F0;overflow:hidden}
+.prog-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#2563EB,#60A5FA)}
+.empty-state{text-align:center;padding:3rem 2rem;color:var(--text-muted)}
+.empty-state i{font-size:2.5rem;margin-bottom:12px;display:block;opacity:.4}
+/* FAB */
+.fab{position:fixed;bottom:2rem;right:2rem;width:56px;height:56px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:1.25rem;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.35);display:flex;align-items:center;justify-content:center;transition:var(--spring);z-index:40}
+.fab:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 8px 24px rgba(37,99,235,.4)}
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);z-index:80;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.3s}
+.overlay.show{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:24px;width:min(560px,94vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.18);transform:translateY(16px);transition:.35s;padding:2rem}
+.overlay.show .modal{transform:translateY(0)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.modal-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.15rem;color:var(--primary)}
+.close-btn{background:transparent;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-muted);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.close-btn:hover{background:#F1F5F9;color:var(--primary)}
+.step-ind{display:flex;align-items:center;gap:0;margin-bottom:2rem}
+.step{display:flex;align-items:center;gap:0;flex:1}
+.step-d{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
+.step-d.done{background:var(--accent);color:#fff}.step-d.active{background:var(--accent-soft);color:var(--accent);border:2px solid var(--accent)}.step-d.pend{background:#E2E8F0;color:var(--text-muted)}
+.step-ln{flex:1;height:2px;background:#E2E8F0}.step-ln.done{background:var(--accent)}
+.form-grp{margin-bottom:1.125rem}
+.form-lbl{display:block;font-size:.82rem;font-weight:600;color:var(--text-main);margin-bottom:.45rem}
+.form-inp,.form-sel,.form-ta{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.875rem;font-family:'Inter',sans-serif;color:var(--text-main);transition:border-color .2s;background:#fff}
+.form-inp:focus,.form-sel:focus,.form-ta:focus{border-color:var(--accent)}
+.form-ta{resize:vertical;min-height:70px}
+.veh-result{border:1.5px solid #E2E8F0;border-radius:10px;padding:12px;margin-top:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.2s}
+.veh-result:hover,.veh-result.sel{border-color:var(--accent);background:var(--accent-soft)}
+.veh-ico{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.modal-footer{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #E2E8F0}
+.btn-sec{padding:9px 20px;border:1.5px solid #E2E8F0;border-radius:8px;background:transparent;font-size:.85rem;font-weight:600;cursor:pointer;color:var(--text-muted);font-family:'Inter',sans-serif;transition:.2s}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent)}
+.btn-pri{padding:9px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:.2s;display:flex;align-items:center;gap:6px}
+.btn-pri:hover{background:#1D4ED8}
+.btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 16px;border-radius:12px;background:#1E293B;color:#fff;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:8px;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:768px){.app{grid-template-columns:1fr}aside{position:fixed;left:-280px;top:0;height:100%;box-shadow:10px 0 30px rgba(0,0,0,.1)}.app.mobile-open aside{left:0}.stat-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<aside id="sidebar">
+  <a href="#" class="brand-logo"><i class="fa-solid fa-cube"></i><span class="brand-text">TruFleetX</span></a>
+  <nav class="nav-menu">
+    <div class="nav-label">Pilot Portal</div>
+    <a href="dashboard_driver.html" class="nav-item"><i class="fa-solid fa-gauge-high"></i><span class="brand-text">Dashboard</span></a>
+    <a href="MyTrips_driver.html" class="nav-item active"><i class="fa-solid fa-route"></i><span class="brand-text">My Trips</span></a>
+    <a href="Vehicle_status_driver.html" class="nav-item"><i class="fa-solid fa-truck-front"></i><span class="brand-text">My Vehicle</span></a>
+    <a href="Documents_driver.html" class="nav-item"><i class="fa-solid fa-folder-open"></i><span class="brand-text">Documents</span></a>
+    <a href="support_driver.html" class="nav-item"><i class="fa-solid fa-headset"></i><span class="brand-text">Support</span></a>
+    <div class="nav-spacer"></div>
+    <a href="../login.html" class="nav-item" style="color:var(--danger)" onclick="localStorage.clear()"><i class="fa-solid fa-arrow-right-from-bracket"></i><span class="brand-text">Sign Out</span></a>
+  </nav>
+</aside>
+<main>
+  <header>
+    <div class="hdr-left">
+      <button class="toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></button>
+      <div><div class="page-title">My Trips</div><div class="page-sub">Trip history &amp; dispatch requests</div></div>
+    </div>
+    <div class="hdr-right">
+      <div class="profile-chip">
+        <span class="live-dot"></span>
+        <img id="profileImg" class="profile-img" src="" alt=""/>
+        <div><div class="pname" id="profileName">Loading…</div><div class="prole">Fleet Pilot</div></div>
+      </div>
+    </div>
+  </header>
+  <div class="content">
+    <div class="stat-grid" id="statGrid">
+      <div class="stat-card"><div class="si ic-b shimmer" style="height:44px;width:44px"></div><div><span class="sv shimmer" style="height:28px;width:60px;display:block;margin-bottom:4px"></span><span class="sl">Total Distance</span></div></div>
+      <div class="stat-card"><div class="si ic-g shimmer" style="height:44px;width:44px"></div><div><span class="sv shimmer" style="height:28px;width:60px;display:block;margin-bottom:4px"></span><span class="sl">Completed Trips</span></div></div>
+      <div class="stat-card"><div class="si ic-o shimmer" style="height:44px;width:44px"></div><div><span class="sv shimmer" style="height:28px;width:60px;display:block;margin-bottom:4px"></span><span class="sl">On-Time Rate</span></div></div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <div class="pt"><i class="fa-solid fa-route" style="color:var(--accent)"></i>Trip Log</div>
+        <div class="tabs">
+          <button class="tab active" id="t-upcoming" onclick="switchTab('upcoming')"><i class="fa-solid fa-clock"></i>Upcoming <span class="cnt" id="uc-cnt">0</span></button>
+          <button class="tab" id="t-history" onclick="switchTab('history')"><i class="fa-solid fa-history"></i>History <span class="cnt" id="hc-cnt" style="background:#F1F5F9;color:var(--text-muted)">0</span></button>
+        </div>
+      </div>
+      <div id="tripsList"><div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-lg"></i></div></div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- FAB -->
+<button class="fab" title="Request New Trip" onclick="openModal()"><i class="fa-solid fa-plus"></i></button>
+
+<!-- DISPATCH MODAL -->
+<div class="overlay" id="dispOvl" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title" id="modalTitle">Request Trip Dispatch</span>
+      <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="step-ind" id="stepInd"></div>
+    <div id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-sec" id="mBack" style="display:none" onclick="modalBack()"><i class="fa-solid fa-chevron-left"></i>Back</button>
+      <button class="btn-pri" id="mNext" onclick="modalNext()"><span id="mNextTxt">Continue</span><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i id="tIco" class="fa-solid fa-circle-check"></i><span id="tMsg"></span></div>
+<style>.shimmer{background:linear-gradient(90deg,#F8FAFC 25%,#E2E8F0 50%,#F8FAFC 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:8px}@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}</style>
+<script>
+const TOKEN=localStorage.getItem('trufleet_token')||'';
+if(!TOKEN){window.location.href='../login.html';}
+(function(){try{const p=JSON.parse(atob(TOKEN.split('.')[1]));if(!p||!['driver','admin','manager'].includes(p.role)){localStorage.clear();window.location.href='../login.html';}}catch{localStorage.clear();window.location.href='../login.html';}})();
+const api=(path,opts={})=>fetch('/api/driver'+path,{...opts,headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}}).then(async r=>{if(r.status===401){localStorage.clear();window.location.href='../login.html';}const d=await r.json();if(!r.ok)throw new Error(d.error||'Error');return d;});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+function toast(msg,ok=true){const el=document.getElementById('toast');document.getElementById('tIco').className=ok?'fa-solid fa-circle-check':'fa-solid fa-circle-xmark';el.style.background=ok?'#1E293B':'#EF4444';document.getElementById('tMsg').textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3800);}
+const app=document.getElementById('app'),sb=document.getElementById('sidebar');
+function toggleSidebar(){if(window.innerWidth<=768)app.classList.toggle('mobile-open');else app.classList.toggle('collapsed');}
+sb.addEventListener('mouseenter',()=>{if(window.innerWidth>768&&app.classList.contains('collapsed')){app.classList.remove('collapsed');sb.dataset.ae='1';}});
+sb.addEventListener('mouseleave',()=>{if(window.innerWidth>768&&sb.dataset.ae==='1'){app.classList.add('collapsed');sb.dataset.ae='0';}});
+
+let curTab='upcoming',upcomingData=[],historyData=[];
+function switchTab(t){
+  curTab=t;
+  ['upcoming','history'].forEach(x=>{
+    document.getElementById('t-'+x).classList.toggle('active',x===t);
+    document.getElementById(x==='upcoming'?'uc-cnt':'hc-cnt').style.background=x===t?'var(--accent-soft)':'#F1F5F9';
+    document.getElementById(x==='upcoming'?'uc-cnt':'hc-cnt').style.color=x===t?'var(--accent)':'var(--text-muted)';
+  });
+  renderTrips(t==='upcoming'?upcomingData:historyData,t);
+}
+function renderTrips(trips,tab){
+  const el=document.getElementById('tripsList');
+  if(!trips||!trips.length){el.innerHTML=`<div class="empty-state"><i class="fa-solid ${tab==='upcoming'?'fa-clock':'fa-box-open'}"></i><div style="font-weight:600;margin-bottom:6px">${tab==='upcoming'?'No Upcoming Trips':'No Trip History'}</div><div style="font-size:.85rem">${tab==='upcoming'?'Use the + button to request a new dispatch.':'Completed trips will appear here.'}</div></div>`;return;}
+  const cm={completed:'bg',active:'bb',pending:'bo',rejected:'br',cancelled:'bmo'};
+  el.innerHTML=trips.map(t=>`
+    <div class="trip-card">
+      <div class="tc-top">
+        <span class="badge ${cm[t.status]||'bb'}">${(t.status||'—').toUpperCase()}</span>
+        <span class="route-txt">${esc(t.origin||'—')} → ${esc(t.destination||'—')}</span>
+        ${t.priority==='high'?'<span class="badge br" style="font-size:.68rem">HIGH PRIORITY</span>':''}
+      </div>
+      <div class="route-line"><div class="rdot" style="background:var(--accent)"></div><div class="rline"></div><div class="rdot" style="background:var(--success)"></div></div>
+      <div class="tc-meta">
+        <span><i class="fa-solid fa-hashtag"></i>${esc(t.ticket_number||'—')}</span>
+        <span><i class="fa-solid fa-calendar"></i>${fmt(t.created_at)}</span>
+        ${t.vehicle?`<span><i class="fa-solid fa-truck"></i>${esc(t.vehicle.registration_number||'Vehicle')}</span>`:''}
+        ${t.cargo_type?`<span><i class="fa-solid fa-boxes-stacked"></i>${esc(t.cargo_type)}</span>`:''}
+        ${t.eta?`<span><i class="fa-solid fa-clock"></i>ETA: ${esc(t.eta)}</span>`:''}
+      </div>
+      ${t.status==='active'?`<div class="prog-bar" style="margin-top:10px"><div class="prog-fill" style="width:${t.progress_pct||10}%"></div></div>`:''}
+    </div>`).join('');
+}
+
+async function loadAll(){
+  try{
+    const [s,up,hi]=await Promise.all([api('/trips/stats'),api('/trips?view=upcoming'),api('/trips?view=history')]);
+    document.getElementById('statGrid').innerHTML=`
+      <div class="stat-card"><div class="si ic-b"><i class="fa-solid fa-road"></i></div><div><span class="sv">${s.totalDistance?Number(s.totalDistance).toLocaleString():'0'}</span><span class="sl">Total Distance (mi)</span></div></div>
+      <div class="stat-card"><div class="si ic-g"><i class="fa-solid fa-flag-checkered"></i></div><div><span class="sv">${s.totalTrips??0}</span><span class="sl">Completed Trips</span></div></div>
+      <div class="stat-card"><div class="si ic-o"><i class="fa-solid fa-clock"></i></div><div><span class="sv">${s.onTimeRate??100}%</span><span class="sl">On-Time Rate</span></div></div>`;
+    upcomingData=Array.isArray(up)?up:[];historyData=Array.isArray(hi)?hi:[];
+    document.getElementById('uc-cnt').textContent=upcomingData.length;
+    document.getElementById('hc-cnt').textContent=historyData.length;
+    switchTab('upcoming');
+  }catch(e){toast('Error loading trips: '+e.message,false);}
+}
+async function loadProfile(){try{const d=await api('/me');const n=d.full_name||d.email?.split('@')[0]||'Pilot';document.getElementById('profileName').textContent=n;document.getElementById('profileImg').src=d.avatar_url||`https://ui-avatars.com/api/?name=${encodeURIComponent(n)}&background=EFF6FF&color=2563EB&rounded=true`;}catch{}}
+
+/* DISPATCH MODAL */
+let mStep=1,mTotalSteps=3,selVeh=null,dispData={};
+const steps=[{n:'Find Vehicle',ico:'fa-truck'},{n:'Trip Details',ico:'fa-map-pin'},{n:'Confirm',ico:'fa-check'}];
+function renderStepInd(){
+  document.getElementById('stepInd').innerHTML=steps.map((s,i)=>{
+    const st=i+1<mStep?'done':i+1===mStep?'active':'pend';
+    return`${i>0?`<div class="step-ln ${i<mStep?'done':''}"></div>`:''}
+      <div class="step-d ${st}">${st==='done'?'<i class="fa-solid fa-check" style="font-size:.65rem"></i>':i+1}</div>`;
+  }).join('');
+}
+function openModal(){mStep=1;selVeh=null;dispData={};document.getElementById('dispOvl').classList.add('show');renderStep();}
+function closeModal(){document.getElementById('dispOvl').classList.remove('show');}
+function renderStep(){
+  renderStepInd();
+  document.getElementById('mBack').style.display=mStep>1?'':'none';
+  document.getElementById('mNextTxt').textContent=mStep===3?'Submit Request':'Continue';
+  const body=document.getElementById('modalBody');
+  if(mStep===1){
+    body.innerHTML=`
+      <div class="form-grp"><label class="form-lbl">Enter last 4 digits of vehicle registration</label><div style="display:flex;gap:8px"><input class="form-inp" id="vLast4" maxlength="4" placeholder="e.g. 4521" style="flex:1"/><button class="btn-pri" style="gap:6px" onclick="lookupVehicle()"><i class="fa-solid fa-search"></i>Search</button></div></div>
+      <div id="vResult"></div>`;
+  } else if(mStep===2){
+    body.innerHTML=`
+      <div class="form-grp"><label class="form-lbl">Origin <span style="color:var(--danger)">*</span></label><input class="form-inp" id="fOrigin" placeholder="Pickup location" value="${esc(dispData.origin||'')}"/></div>
+      <div class="form-grp"><label class="form-lbl">Destination <span style="color:var(--danger)">*</span></label><input class="form-inp" id="fDest" placeholder="Delivery location" value="${esc(dispData.destination||'')}"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-grp"><label class="form-lbl">Cargo Type</label><input class="form-inp" id="fCargo" placeholder="e.g. Electronics" value="${esc(dispData.cargo_type||'')}"/></div>
+        <div class="form-grp"><label class="form-lbl">Priority</label><select class="form-sel" id="fPriority"><option value="normal" ${(dispData.priority||'normal')==='normal'?'selected':''}>Normal</option><option value="high" ${dispData.priority==='high'?'selected':''}>High</option><option value="urgent" ${dispData.priority==='urgent'?'selected':''}>Urgent</option></select></div>
+      </div>
+      <div class="form-grp"><label class="form-lbl">Notes (optional)</label><textarea class="form-ta" id="fNotes">${esc(dispData.notes||'')}</textarea></div>`;
+  } else if(mStep===3){
+    const v=selVeh||{};
+    body.innerHTML=`
+      <div style="background:var(--accent-soft);border:1.5px solid #BFDBFE;border-radius:14px;padding:1.25rem;margin-bottom:1.25rem">
+        <div style="font-weight:700;color:var(--accent);font-family:'Outfit',sans-serif;margin-bottom:.75rem"><i class="fa-solid fa-check-circle" style="margin-right:6px"></i>Review Trip Request</div>
+        <div style="display:grid;gap:.5rem;font-size:.87rem">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Vehicle</span><strong>${esc(v.make||'')} ${esc(v.model||'')} · ${esc(v.registration_number||'—')}</strong></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Route</span><strong>${esc(dispData.origin||'—')} → ${esc(dispData.destination||'—')}</strong></div>
+          ${dispData.cargo_type?`<div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Cargo</span><strong>${esc(dispData.cargo_type)}</strong></div>`:''}
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Priority</span><strong>${(dispData.priority||'normal').toUpperCase()}</strong></div>
+        </div>
+      </div>
+      <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px 14px;font-size:.82rem;color:#92400E"><i class="fa-solid fa-info-circle" style="margin-right:6px"></i>Dispatch requests are auto-approved within minutes.</div>`;
+  }
+}
+async function lookupVehicle(){
+  const last4=document.getElementById('vLast4')?.value.trim();
+  if(!last4||last4.length<2){toast('Enter at least 2 characters',false);return;}
+  const res=document.getElementById('vResult');
+  res.innerHTML=`<div style="text-align:center;padding:1rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>`;
+  try{
+    const d=await api(`/vehicle-lookup?last4=${encodeURIComponent(last4)}`);
+    const vehicles=Array.isArray(d)?d:d.vehicles||[];
+    if(!vehicles.length){res.innerHTML=`<div style="padding:10px;color:var(--text-muted);font-size:.85rem;text-align:center">No vehicles found matching "${esc(last4)}"</div>`;return;}
+    res.innerHTML=`<div style="margin-top:4px;font-size:.78rem;color:var(--text-muted);margin-bottom:6px">${vehicles.length} result(s) — click to select:</div>`+
+      vehicles.map(v=>`<div class="veh-result ${selVeh?.id===v.id?'sel':''}" onclick="selectVeh(${JSON.stringify(v).replace(/"/g,'&quot;')},this)">
+        <div class="veh-ico"><i class="fa-solid fa-truck"></i></div>
+        <div><div style="font-weight:600;font-size:.9rem">${esc(v.make||'')} ${esc(v.model||'')} <span style="color:var(--text-muted);font-weight:400">· ${esc(v.registration_number||'—')}</span></div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px">${esc(v.type||'Truck')} · Fuel: ${v.fuel_level??'—'}% · ${v.status||'available'}</div></div>
+      </div>`).join('');
+  }catch(e){res.innerHTML=`<div style="padding:10px;color:var(--danger);font-size:.85rem">${esc(e.message)}</div>`;}
+}
+function selectVeh(v,el){
+  selVeh=v;
+  document.querySelectorAll('.veh-result').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function modalBack(){if(mStep>1){mStep--;renderStep();}}
+async function modalNext(){
+  if(mStep===1){
+    if(!selVeh){toast('Select a vehicle first',false);return;}
+    mStep=2;renderStep();
+  } else if(mStep===2){
+    const o=document.getElementById('fOrigin')?.value.trim();
+    const de=document.getElementById('fDest')?.value.trim();
+    if(!o||!de){toast('Origin and destination are required',false);return;}
+    dispData={origin:o,destination:de,cargo_type:document.getElementById('fCargo')?.value.trim()||'',priority:document.getElementById('fPriority')?.value||'normal',notes:document.getElementById('fNotes')?.value.trim()||''};
+    mStep=3;renderStep();
+  } else {
+    const btn=document.getElementById('mNext');btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>';
+    try{
+      await api('/dispatch',{method:'POST',body:JSON.stringify({vehicle_id:selVeh.id,...dispData})});
+      closeModal();toast('Dispatch request submitted! Awaiting approval.',true);
+      loadAll();
+    }catch(e){toast(e.message,false);}finally{btn.disabled=false;btn.innerHTML='<span id="mNextTxt">Submit Request</span>';}
+  }
+}
+
+loadProfile();loadAll();
+</script>
+</body>
+</html>

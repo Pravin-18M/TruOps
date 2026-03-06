@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mission Control | TruFleetX Pilot</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+:root{
+  --primary:#0F172A;--accent:#2563EB;--accent-soft:#EFF6FF;
+  --bg-body:#F1F5F9;--bg-card:#FFFFFF;
+  --text-main:#1E293B;--text-muted:#64748B;
+  --success:#10B981;--warning:#F59E0B;--danger:#EF4444;
+  --sidebar-width:280px;--sidebar-collapsed:80px;--header-height:80px;
+  --shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);
+  --shadow-card:0 4px 6px -1px rgba(0,0,0,.05),0 2px 4px -1px rgba(0,0,0,.03);
+  --shadow-hover:0 20px 25px -5px rgba(0,0,0,.07),0 10px 10px -5px rgba(0,0,0,.02);
+  --radius-lg:20px;--radius-md:12px;
+  --spring:all .4s cubic-bezier(.34,1.56,.64,1);
+  --smooth:all .3s cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;outline:none}
+body{font-family:'Inter',sans-serif;background:var(--bg-body);color:var(--text-main);overflow-x:hidden}
+.app{display:grid;grid-template-columns:var(--sidebar-width) 1fr;transition:grid-template-columns .4s ease;min-height:100vh}
+.app.collapsed{grid-template-columns:var(--sidebar-collapsed) 1fr}
+aside{background:var(--bg-card);border-right:1px solid #E2E8F0;padding:1.5rem 1rem;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:50;transition:var(--smooth);overflow:hidden}
+.brand-logo{display:flex;align-items:center;gap:12px;padding:0 1rem 2.5rem;color:var(--primary);text-decoration:none;font-family:'Outfit',sans-serif;font-weight:700;font-size:1.4rem;white-space:nowrap;overflow:hidden}
+.brand-text{font-family:'Outfit',sans-serif;font-weight:600;font-size:1rem;transition:opacity .2s}
+.app.collapsed .brand-text{opacity:0;pointer-events:none;width:0;overflow:hidden}
+.nav-menu{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:0}
+.nav-label{padding:.9rem 1rem .3rem;font-size:.68rem;font-weight:600;color:#CBD5E1;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;overflow:hidden}
+.app.collapsed .nav-label{opacity:0}
+.nav-item{display:flex;align-items:center;gap:16px;padding:11px 16px;color:var(--text-muted);text-decoration:none;border-radius:10px;transition:.25s;font-weight:500;white-space:nowrap;overflow:hidden}
+.nav-item:hover,.nav-item.active{background:#EFF6FF;color:var(--accent)}
+.nav-item i{font-size:1.05rem;min-width:22px;text-align:center;flex-shrink:0}
+.nav-spacer{flex-grow:1}
+main{padding:0;overflow-y:auto;height:100vh}
+header{height:var(--header-height);background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,.6);position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:0 2rem}
+.hdr-left{display:flex;align-items:center;gap:1rem}
+.toggle-btn{background:transparent;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-muted);padding:8px;border-radius:8px;transition:.2s}
+.toggle-btn:hover{background:var(--accent-soft);color:var(--accent)}
+.page-title{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.2rem;color:var(--primary)}
+.page-sub{font-size:.75rem;color:var(--text-muted);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:1.25rem}
+.profile-chip{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 7px;background:#fff;border:1px solid #E2E8F0;border-radius:30px;cursor:pointer;transition:var(--smooth)}
+.profile-chip:hover{border-color:var(--accent);box-shadow:var(--shadow-sm)}
+.profile-img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+.pname{font-weight:600;font-size:.85rem;color:var(--primary);line-height:1.15}
+.prole{font-size:.7rem;color:var(--text-muted)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;animation:ldot 2.2s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.3}}
+.content{padding:2rem;max-width:1600px;margin:0 auto;opacity:0;animation:fadeIn .55s ease-out forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.5rem;margin-bottom:2rem}
+.kpi-card{background:var(--bg-card);padding:1.5rem;border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);transition:var(--spring);position:relative;overflow:hidden;cursor:default}
+.kpi-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-hover)}
+.kpi-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:1rem}
+.ic-b{background:#EFF6FF;color:#2563EB}.ic-g{background:#ECFDF5;color:#10B981}.ic-o{background:#FFF7ED;color:#F59E0B}.ic-r{background:#FEF2F2;color:#EF4444}.ic-p{background:#F5F3FF;color:#7C3AED}
+.kpi-val{font-family:'Outfit',sans-serif;font-size:2rem;font-weight:700;color:var(--primary);display:block;margin-bottom:.2rem}
+.kpi-lbl{color:var(--text-muted);font-size:.875rem;font-weight:500}
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;margin-bottom:2rem}
+/* PANEL */
+.panel{background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);padding:1.5rem}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.pt{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.05rem;color:var(--primary);display:flex;align-items:center;gap:8px}
+.badge{font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px}
+.bb{background:#EFF6FF;color:#2563EB}.bg{background:#ECFDF5;color:#10B981}.bo{background:#FFF7ED;color:#F59E0B}.br{background:#FEF2F2;color:#EF4444}.bmo{background:#F1F5F9;color:#64748B}
+/* MISSION */
+.mission-empty{text-align:center;padding:2.5rem 1.5rem;border:2px dashed #E2E8F0;border-radius:16px}
+.mission-row{border:1.5px solid #E2E8F0;border-radius:var(--radius-md);padding:1.125rem;margin-bottom:0;transition:var(--smooth)}
+.mission-row:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.06)}
+.route-line-wrap{display:flex;align-items:center;gap:10px;margin:10px 0}
+.rdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.rline{flex:1;height:2px;background:linear-gradient(90deg,var(--accent),var(--success))}
+.prog-bar{height:6px;border-radius:20px;background:#E2E8F0;overflow:hidden;margin:6px 0}
+.prog-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#2563EB,#60A5FA);transition:width .7s ease}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:.7rem;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent)}
+.chip.g{background:#ECFDF5;color:#10B981}.chip.o{background:#FFF7ED;color:#F59E0B}.chip.r{background:#FEF2F2;color:#EF4444}
+.notes-ta{width:100%;margin-top:10px;padding:8px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-family:'Inter',sans-serif;font-size:.82rem;resize:vertical;min-height:58px;transition:border-color .2s;color:var(--text-main)}
+.notes-ta:focus{border-color:var(--accent)}
+.complete-btn{width:100%;margin-top:10px;padding:10px 16px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;transition:var(--smooth)}
+.complete-btn:hover:not(:disabled){background:#1D4ED8}
+.complete-btn:disabled{opacity:.55;cursor:not-allowed}
+/* CHECKLIST */
+.ci{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;margin-bottom:6px;border:1px solid #E2E8F0}
+.ci-ok{background:#F0FDF4;border-color:#BBF7D0;color:#166534}.ci-wn{background:#FFFBEB;border-color:#FDE68A;color:#92400E}.ci-er{background:#FEF2F2;border-color:#FECACA;color:#991B1B}.ci-na{background:#F8FAFC;color:var(--text-muted)}
+.ci-ico{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0}
+/* TABLE */
+.dtbl{width:100%;border-collapse:collapse}
+.dtbl th{text-align:left;padding:.75rem 1rem;font-size:.78rem;color:var(--text-muted);font-weight:600;border-bottom:1px solid #E2E8F0;white-space:nowrap}
+.dtbl td{padding:.75rem 1rem;font-size:.87rem;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+.dtbl tr:last-child td{border-bottom:none}
+.dtbl tbody tr:hover td{background:#F8FAFC}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 16px;border-radius:12px;background:#1E293B;color:#fff;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:8px;max-width:360px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateY(0)}
+/* SHIMMER */
+.shimmer{background:linear-gradient(90deg,#F8FAFC 25%,#E2E8F0 50%,#F8FAFC 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:8px}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media(max-width:1200px){.two-col{grid-template-columns:1fr}}
+@media(max-width:768px){.app{grid-template-columns:1fr}aside{position:fixed;left:-280px;top:0;height:100%;box-shadow:10px 0 30px rgba(0,0,0,.1)}.app.mobile-open aside{left:0}.kpi-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<aside id="sidebar">
+  <a href="#" class="brand-logo"><i class="fa-solid fa-cube"></i><span class="brand-text">TruFleetX</span></a>
+  <nav class="nav-menu">
+    <div class="nav-label">Pilot Portal</div>
+    <a href="dashboard_driver.html" class="nav-item active"><i class="fa-solid fa-gauge-high"></i><span class="brand-text">Dashboard</span></a>
+    <a href="MyTrips_driver.html" class="nav-item"><i class="fa-solid fa-route"></i><span class="brand-text">My Trips</span></a>
+    <a href="Vehicle_status_driver.html" class="nav-item"><i class="fa-solid fa-truck-front"></i><span class="brand-text">My Vehicle</span></a>
+    <a href="Documents_driver.html" class="nav-item"><i class="fa-solid fa-folder-open"></i><span class="brand-text">Documents</span></a>
+    <a href="support_driver.html" class="nav-item"><i class="fa-solid fa-headset"></i><span class="brand-text">Support</span></a>
+    <div class="nav-spacer"></div>
+    <a href="../login.html" class="nav-item" style="color:var(--danger)" onclick="localStorage.clear()"><i class="fa-solid fa-arrow-right-from-bracket"></i><span class="brand-text">Sign Out</span></a>
+  </nav>
+</aside>
+<main>
+  <header>
+    <div class="hdr-left">
+      <button class="toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></button>
+      <div><div class="page-title">Pilot Dashboard</div><div class="page-sub" id="clockSub">Loading…</div></div>
+    </div>
+    <div class="hdr-right">
+      <div class="profile-chip">
+        <span class="live-dot"></span>
+        <img id="profileImg" class="profile-img" src="" alt=""/>
+        <div><div class="pname" id="profileName">Loading…</div><div class="prole">Fleet Pilot</div></div>
+      </div>
+    </div>
+  </header>
+  <div class="content">
+    <!-- KPI -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card"><div class="kpi-icon ic-b shimmer" style="height:48px"></div><span class="shimmer" style="height:32px;width:70px;display:block;margin-bottom:6px"></span><span class="shimmer" style="height:14px;width:110px;display:block"></span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-g shimmer" style="height:48px"></div><span class="shimmer" style="height:32px;width:70px;display:block;margin-bottom:6px"></span><span class="shimmer" style="height:14px;width:110px;display:block"></span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-p shimmer" style="height:48px"></div><span class="shimmer" style="height:32px;width:70px;display:block;margin-bottom:6px"></span><span class="shimmer" style="height:14px;width:110px;display:block"></span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-o shimmer" style="height:48px"></div><span class="shimmer" style="height:32px;width:70px;display:block;margin-bottom:6px"></span><span class="shimmer" style="height:14px;width:110px;display:block"></span></div>
+    </div>
+    <!-- TWO COL -->
+    <div class="two-col">
+      <div>
+        <!-- CURRENT MISSION -->
+        <div class="panel" style="margin-bottom:1.5rem">
+          <div class="ph">
+            <div class="pt"><i class="fa-solid fa-location-crosshairs" style="color:var(--accent)"></i>Current Mission</div>
+            <span class="badge bb" id="mBadge">Loading</span>
+          </div>
+          <div id="missionBody"><div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-lg"></i></div></div>
+        </div>
+        <!-- RECENT TRIPS -->
+        <div class="panel">
+          <div class="ph">
+            <div class="pt"><i class="fa-solid fa-clock-rotate-left" style="color:var(--success)"></i>Recent Trips</div>
+            <a href="MyTrips_driver.html" style="font-size:.8rem;color:var(--accent);text-decoration:none;font-weight:600">View All →</a>
+          </div>
+          <table class="dtbl"><thead><tr><th>Date</th><th>Route</th><th>Ticket</th><th>Status</th></tr></thead>
+          <tbody id="recentBody"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></td></tr></tbody></table>
+        </div>
+      </div>
+      <!-- CHECKLIST -->
+      <div class="panel">
+        <div class="ph"><div class="pt"><i class="fa-solid fa-list-check" style="color:var(--accent)"></i>Pre-Trip Checklist</div></div>
+        <div id="checklistBody"><div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-lg"></i></div></div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+<div class="toast" id="toast"><i id="tIco" class="fa-solid fa-circle-check"></i><span id="tMsg"></span></div>
+<script>
+const TOKEN=localStorage.getItem('trufleet_token')||'';
+if(!TOKEN){window.location.href='../login.html';}
+(function(){try{const p=JSON.parse(atob(TOKEN.split('.')[1]));if(!p||!['driver','admin','manager'].includes(p.role)){localStorage.clear();window.location.href='../login.html';}}catch{localStorage.clear();window.location.href='../login.html';}})();
+
+const api=(path,opts={})=>fetch('/api/driver'+path,{...opts,headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}}).then(async r=>{
+  if(r.status===401){localStorage.clear();window.location.href='../login.html';}
+  const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d;
+});
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+function toast(msg,ok=true){
+  const el=document.getElementById('toast');
+  document.getElementById('tIco').className=ok?'fa-solid fa-circle-check':'fa-solid fa-circle-xmark';
+  el.style.background=ok?'#1E293B':'#EF4444';
+  document.getElementById('tMsg').textContent=msg;
+  el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3800);
+}
+function clock(){const n=new Date();document.getElementById('clockSub').textContent=n.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});}
+setInterval(clock,60000);clock();
+
+const app=document.getElementById('app'),sb=document.getElementById('sidebar');
+function toggleSidebar(){if(window.innerWidth<=768)app.classList.toggle('mobile-open');else app.classList.toggle('collapsed');}
+sb.addEventListener('mouseenter',()=>{if(window.innerWidth>768&&app.classList.contains('collapsed')){app.classList.remove('collapsed');sb.dataset.ae='1';}});
+sb.addEventListener('mouseleave',()=>{if(window.innerWidth>768&&sb.dataset.ae==='1'){app.classList.add('collapsed');sb.dataset.ae='0';}});
+
+async function loadProfile(){
+  try{
+    const d=await api('/me');
+    const name=d.full_name||d.email?.split('@')[0]||'Pilot';
+    document.getElementById('profileName').textContent=name;
+    document.getElementById('profileImg').src=d.avatar_url||`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=EFF6FF&color=2563EB&rounded=true`;
+  }catch{}
+}
+
+async function loadStats(){
+  try{
+    const s=await api('/trips/stats');
+    document.getElementById('kpiGrid').innerHTML=`
+      <div class="kpi-card"><div class="kpi-icon ic-b"><i class="fa-solid fa-shield-halved"></i></div><span class="kpi-val">${s.safetyScore??'—'}</span><span class="kpi-lbl">Safety Score</span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-g"><i class="fa-solid fa-road"></i></div><span class="kpi-val">${s.totalDistance?Number(s.totalDistance).toLocaleString():'0'}</span><span class="kpi-lbl">Miles Driven</span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-p"><i class="fa-solid fa-route"></i></div><span class="kpi-val">${s.totalTrips??0}</span><span class="kpi-lbl">Completed Trips</span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-o"><i class="fa-solid fa-clock"></i></div><span class="kpi-val">${s.onTimeRate??100}%</span><span class="kpi-lbl">On-Time Rate</span></div>`;
+  }catch{document.getElementById('kpiGrid').innerHTML=`<div style="grid-column:1/-1;padding:1rem;color:var(--text-muted);font-size:.88rem">Statistics unavailable.</div>`;}
+}
+
+async function loadMission(){
+  try{
+    const t=await api('/current-trip');
+    const mb=document.getElementById('mBadge');
+    if(!t){
+      mb.textContent='No Active Trip';mb.className='badge bmo';
+      document.getElementById('missionBody').innerHTML=`<div class="mission-empty"><div style="font-size:2.5rem;margin-bottom:12px">🛣️</div><div style="font-weight:600;font-size:1rem;margin-bottom:6px">No Active Mission</div><div style="color:var(--text-muted);font-size:.88rem;margin-bottom:16px">Head to My Trips to request a new dispatch.</div><a href="MyTrips_driver.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:.85rem;font-weight:600"><i class="fa-solid fa-plus"></i>New Trip Request</a></div>`;
+      return;
+    }
+    const cm={active:'bb',pending:'bo',completed:'bg'};
+    mb.textContent=(t.status||'—').toUpperCase();mb.className='badge '+(cm[t.status]||'bb');
+    const v=t.vehicle||{};const prog=t.progress_pct||0;const isA=t.status==='active';
+
+    // ── Trip Intelligence badges ───────────────────────────────────────
+    const intBadges=[];
+    if(t.vip_required) intBadges.push(`<span style="background:#9333EA18;color:#9333EA;padding:3px 8px;border-radius:12px;font-size:.7rem;font-weight:700"><i class="fa-solid fa-star" style="margin-right:3px"></i>VIP</span>`);
+    if(t.is_long_trip) intBadges.push(`<span style="background:#F59E0B18;color:#D97706;padding:3px 8px;border-radius:12px;font-size:.7rem;font-weight:700"><i class="fa-solid fa-road" style="margin-right:3px"></i>LONG HAUL</span>`);
+    if(t.trip_classification){const cc={short:'#10B981',medium:'#2563EB',long:'#F59E0B','ultra-long':'#DC2626'};const col=cc[t.trip_classification]||'#64748B';intBadges.push(`<span style="background:${col}18;color:${col};padding:3px 8px;border-radius:12px;font-size:.7rem;font-weight:700">${t.trip_classification.replace('-',' ').toUpperCase()}</span>`);}
+    const badgeRow=intBadges.length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${intBadges.join('')}</div>`:'';
+
+    document.getElementById('missionBody').innerHTML=`
+      <div class="mission-row">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:.82rem;color:var(--text-muted)">Ticket <strong style="color:var(--primary)">#${esc(t.ticket_number||'—')}</strong></span>
+          <span style="font-size:.78rem;font-weight:700;color:${t.priority==='high'?'var(--danger)':'var(--success)'}">${(t.priority||'standard').toUpperCase()}</span>
+        </div>
+        ${badgeRow}
+        <div class="route-line-wrap">
+          <div class="rdot" style="background:var(--accent)"></div>
+          <div class="rline"></div>
+          <div class="rdot" style="background:var(--success)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.83rem;font-weight:600;margin-bottom:10px">
+          <span>${esc(t.origin||'—')}</span><span>${esc(t.destination||'—')}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text-muted);margin-bottom:4px"><span>Trip Progress</span><span>${prog}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${prog}%"></div></div>
+        <div class="chips">
+          ${v.make?`<span class="chip"><i class="fa-solid fa-truck" style="margin-right:3px;font-size:.65rem"></i>${esc(v.make+' '+v.model)}</span>`:''}
+          ${t.cargo_type?`<span class="chip g">${esc(t.cargo_type)}</span>`:''}
+          ${t.distance_km?`<span class="chip"><i class="fa-solid fa-arrows-left-right" style="margin-right:3px;font-size:.65rem"></i>${t.distance_km} km</span>`:''}
+          ${t.eta?`<span class="chip o">ETA: ${esc(t.eta)}</span>`:''}
+        </div>
+        ${isA?`<textarea id="tripNotes" class="notes-ta" placeholder="Add delivery notes (optional)…"></textarea>
+          <button class="complete-btn" id="cBtn" onclick="completeTrip('${t.id}')"><i class="fa-solid fa-flag-checkered"></i>Mark Trip Complete</button>`
+          :`<div style="margin-top:10px;padding:9px 12px;background:#FFFBEB;border-radius:8px;font-size:.82rem;color:#92400E;border:1px solid #FDE68A"><i class="fa-solid fa-hourglass-half" style="margin-right:6px"></i>Awaiting dispatch activation.</div>`}
+      </div>`;
+  }catch(e){document.getElementById('missionBody').innerHTML=`<div style="padding:14px;color:var(--text-muted);font-size:.88rem">Could not load mission: ${esc(e.message)}</div>`;}
+}
+
+async function completeTrip(id){
+  const btn=document.getElementById('cBtn');const notes=document.getElementById('tripNotes')?.value||'';
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Completing…';}
+  try{
+    await api(`/trips/${id}/complete`,{method:'PUT',body:JSON.stringify({notes})});
+    toast('Mission complete! Great work, Pilot.');
+    loadMission();loadStats();loadRecentTrips();
+  }catch(e){toast(e.message,false);if(btn){btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-flag-checkered"></i>Mark Trip Complete';}}
+}
+
+async function loadRecentTrips(){
+  try{
+    const trips=await api('/trips?view=history');
+    const tbody=document.getElementById('recentBody');
+    const r=(trips||[]).slice(0,5);
+    if(!r.length){tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem;font-size:.88rem">No completed trips yet.</td></tr>`;return;}
+    const cm={completed:'bg',active:'bb',pending:'bo',rejected:'br'};
+    tbody.innerHTML=r.map(t=>`<tr>
+      <td style="font-size:.8rem;white-space:nowrap;color:var(--text-muted)">${fmt(t.created_at)}</td>
+      <td><div style="font-weight:600;font-size:.87rem">${esc(t.origin||'—')} → ${esc(t.destination||'—')}</div></td>
+      <td style="font-size:.8rem;color:var(--text-muted)">#${esc(t.ticket_number||'—')}</td>
+      <td><span class="badge ${cm[t.status]||'bb'}" style="font-size:.7rem">${(t.status||'—').toUpperCase()}</span></td>
+    </tr>`).join('');
+  }catch{document.getElementById('recentBody').innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1.5rem">Could not load trips.</td></tr>`;}
+}
+
+async function loadChecklist(){
+  const el=document.getElementById('checklistBody');
+  try{
+    const [vRes,meRes]=await Promise.all([api('/vehicle').catch(()=>({vehicle:{},insurance:{}})),api('/me')]);
+    const v=vRes.vehicle||{};const ins=vRes.insurance||{};
+    const dp=Array.isArray(meRes.driver_profiles)?meRes.driver_profiles[0]:meRes.driver_profiles||{};
+    const today=new Date();
+    const licExp=dp.license_expiry?new Date(dp.license_expiry):null;
+    const licDays=licExp?Math.ceil((licExp-today)/86400000):null;
+    const insExp=ins.expiry_date?new Date(ins.expiry_date):null;
+    const insDays=insExp?Math.ceil((insExp-today)/86400000):null;
+    const fuel=v.fuel_level??null;
+    const items=[
+      {ico:'fa-gas-pump',lbl:'Fuel Level',sub:fuel!=null?`${fuel}% — ${fuel>20?'Sufficient':'Low — refuel before trip'}`:'No fuel data available',ok:fuel!=null&&fuel>20,na:fuel==null,warn:fuel!=null&&fuel>10&&fuel<=20},
+      {ico:'fa-file-shield',lbl:'Vehicle Insurance',sub:insDays!=null?(insDays<=0?`Expired ${Math.abs(insDays)}d ago`:insDays<=30?`Expiring in ${insDays} days`:`Valid · ${insDays}d remaining`):'No policy on record',ok:insDays!=null&&insDays>0,na:!ins.expiry_date,warn:insDays!=null&&insDays>0&&insDays<=30},
+      {ico:'fa-id-card',lbl:'Driving License',sub:licDays!=null?(licDays<=0?'License expired':licDays<=30?`Expiring in ${licDays} days`:`Valid · ${licDays}d remaining`):'No license record',ok:licDays!=null&&licDays>0,na:!licExp,warn:licDays!=null&&licDays>0&&licDays<=30},
+      {ico:'fa-truck',lbl:'Vehicle Assignment',sub:v.id?`${v.make||''} ${v.model||''} · ${v.registration_number||''}`.trim()||'Assigned':'No vehicle assigned — contact dispatcher',ok:!!v.id,na:!v.id},
+    ];
+    el.innerHTML=items.map(i=>{
+      const cls=i.na?'ci-na':i.warn?'ci-wn':i.ok?'ci-ok':'ci-er';
+      const bgc=i.na?'#94A3B8':i.warn?'#F59E0B':i.ok?'#10B981':'#EF4444';
+      const fa=i.na?'fa-minus':i.warn?'fa-exclamation':i.ok?'fa-check':'fa-xmark';
+      return`<div class="ci ${cls}">
+        <div class="ci-ico" style="background:${bgc};color:#fff"><i class="fa-solid ${fa}"></i></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:.875rem"><i class="fa-solid ${i.ico}" style="margin-right:5px;font-size:.78rem"></i>${i.lbl}</div>
+          <div style="font-size:.75rem;margin-top:2px;opacity:.7">${esc(i.sub)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch{el.innerHTML=`<div style="padding:12px;color:var(--text-muted);font-size:.85rem">Checklist data unavailable.</div>`;}
+}
+
+async function init(){
+  await Promise.all([loadProfile(),loadStats(),loadMission(),loadRecentTrips(),loadChecklist()]);
+  // Auto-refresh mission panel every 15 s so new assignments appear immediately
+  setInterval(loadMission, 15000);
+}
+init();
+</script>
+</body>
+</html>

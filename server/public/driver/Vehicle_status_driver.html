@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>My Vehicle | TruFleetX Pilot</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+:root{--primary:#0F172A;--accent:#2563EB;--accent-soft:#EFF6FF;--bg-body:#F1F5F9;--bg-card:#FFFFFF;--text-main:#1E293B;--text-muted:#64748B;--success:#10B981;--warning:#F59E0B;--danger:#EF4444;--sidebar-width:280px;--sidebar-collapsed:80px;--header-height:80px;--shadow-sm:0 1px 2px 0 rgba(0,0,0,.05);--shadow-card:0 4px 6px -1px rgba(0,0,0,.05),0 2px 4px -1px rgba(0,0,0,.03);--shadow-hover:0 20px 25px -5px rgba(0,0,0,.07),0 10px 10px -5px rgba(0,0,0,.02);--radius-lg:20px;--radius-md:12px;--spring:all .4s cubic-bezier(.34,1.56,.64,1);--smooth:all .3s cubic-bezier(.4,0,.2,1);}
+*{margin:0;padding:0;box-sizing:border-box;outline:none}
+body{font-family:'Inter',sans-serif;background:var(--bg-body);color:var(--text-main);overflow-x:hidden}
+.app{display:grid;grid-template-columns:var(--sidebar-width) 1fr;transition:grid-template-columns .4s ease;min-height:100vh}
+.app.collapsed{grid-template-columns:var(--sidebar-collapsed) 1fr}
+aside{background:var(--bg-card);border-right:1px solid #E2E8F0;padding:1.5rem 1rem;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:50;transition:var(--smooth);overflow:hidden}
+.brand-logo{display:flex;align-items:center;gap:12px;padding:0 1rem 2.5rem;color:var(--primary);text-decoration:none;font-family:'Outfit',sans-serif;font-weight:700;font-size:1.4rem;white-space:nowrap;overflow:hidden}
+.brand-text{font-family:'Outfit',sans-serif;font-weight:600;font-size:1rem;transition:opacity .2s}
+.app.collapsed .brand-text{opacity:0;pointer-events:none;width:0;overflow:hidden}
+.nav-menu{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:0}
+.nav-label{padding:.9rem 1rem .3rem;font-size:.68rem;font-weight:600;color:#CBD5E1;text-transform:uppercase;letter-spacing:.1em;white-space:nowrap;overflow:hidden}
+.app.collapsed .nav-label{opacity:0}
+.nav-item{display:flex;align-items:center;gap:16px;padding:11px 16px;color:var(--text-muted);text-decoration:none;border-radius:10px;transition:.25s;font-weight:500;white-space:nowrap;overflow:hidden}
+.nav-item:hover,.nav-item.active{background:#EFF6FF;color:var(--accent)}
+.nav-item i{font-size:1.05rem;min-width:22px;text-align:center;flex-shrink:0}
+.nav-spacer{flex-grow:1}
+main{padding:0;overflow-y:auto;height:100vh}
+header{height:var(--header-height);background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,.6);position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:0 2rem}
+.hdr-left{display:flex;align-items:center;gap:1rem}
+.toggle-btn{background:transparent;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-muted);padding:8px;border-radius:8px;transition:.2s}
+.toggle-btn:hover{background:var(--accent-soft);color:var(--accent)}
+.page-title{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.2rem;color:var(--primary)}
+.page-sub{font-size:.75rem;color:var(--text-muted);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:1.25rem}
+.profile-chip{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 7px;background:#fff;border:1px solid #E2E8F0;border-radius:30px;cursor:pointer;transition:var(--smooth)}
+.profile-chip:hover{border-color:var(--accent)}
+.profile-img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+.pname{font-weight:600;font-size:.85rem;color:var(--primary);line-height:1.15}
+.prole{font-size:.7rem;color:var(--text-muted)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;animation:ldot 2.2s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.3}}
+.content{padding:2rem;max-width:1400px;margin:0 auto;opacity:0;animation:fadeIn .55s ease-out forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* VEHICLE HERO */
+.veh-hero{background:linear-gradient(135deg,#1D4ED8 0%,#2563EB 45%,#3B82F6 100%);border-radius:var(--radius-lg);padding:2rem;margin-bottom:1.5rem;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;box-shadow:0 10px 24px rgba(37,99,235,.3)}
+.vh-icon{width:80px;height:80px;border-radius:20px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:2.2rem;backdrop-filter:blur(4px);flex-shrink:0}
+.vh-reg{font-family:'Outfit',sans-serif;font-size:2rem;font-weight:700;letter-spacing:2px}
+.vh-sub{font-size:.95rem;opacity:.8;margin-top:4px}
+.vh-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:700;margin-top:10px}
+.vh-b-ok{background:rgba(16,185,129,.25);color:#6EE7B7}.vh-b-wn{background:rgba(245,158,11,.25);color:#FDE68A}.vh-b-er{background:rgba(239,68,68,.25);color:#FCA5A5}
+.vh-specs{display:flex;flex-wrap:wrap;gap:1rem}
+.vh-spec{display:flex;flex-direction:column;gap:3px}
+.vh-sl{font-size:.72rem;opacity:.65;text-transform:uppercase;letter-spacing:.06em}
+.vh-sv{font-weight:700;font-size:.95rem}
+/* STATUS CARDS */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.25rem;margin-bottom:1.75rem}
+.st-card{background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);padding:1.5rem;transition:var(--spring)}
+.st-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover)}
+.st-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:1rem}
+.ic-b{background:#EFF6FF;color:#2563EB}.ic-g{background:#ECFDF5;color:#10B981}.ic-o{background:#FFF7ED;color:#F59E0B}.ic-r{background:#FEF2F2;color:#EF4444}
+.st-lbl{font-size:.82rem;color:var(--text-muted);font-weight:500;margin-bottom:.35rem}
+.st-val{font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:700;color:var(--primary);margin-bottom:.25rem}
+.st-sub{font-size:.78rem;color:var(--text-muted)}
+.prog-bar{height:8px;border-radius:20px;background:#E2E8F0;overflow:hidden;margin-top:10px}
+.prog-fill{height:100%;border-radius:20px;transition:width .7s ease}
+/* PANEL */
+.panel{background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);padding:1.5rem;margin-bottom:1.5rem}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.pt{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.05rem;color:var(--primary);display:flex;align-items:center;gap:8px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+/* FORM */
+.form-grp{margin-bottom:1rem}
+.form-lbl{display:block;font-size:.82rem;font-weight:600;color:var(--text-main);margin-bottom:.45rem}
+.form-inp,.form-sel,.form-ta{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.875rem;font-family:'Inter',sans-serif;color:var(--text-main);transition:border-color .2s;background:#fff}
+.form-inp:focus,.form-sel:focus,.form-ta:focus{border-color:var(--accent)}
+.form-ta{resize:vertical;min-height:80px}
+.btn-pri{padding:10px 24px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-size:.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:7px;transition:.2s}
+.btn-pri:hover{background:#1D4ED8}
+.btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.badge{font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px}
+.bg{background:#ECFDF5;color:#10B981}.bo{background:#FFF7ED;color:#F59E0B}.br{background:#FEF2F2;color:#EF4444}.bb{background:#EFF6FF;color:#2563EB}
+/* TABLE */
+.dtbl{width:100%;border-collapse:collapse}
+.dtbl th{text-align:left;padding:.75rem 1rem;font-size:.78rem;color:var(--text-muted);font-weight:600;border-bottom:1px solid #E2E8F0;white-space:nowrap}
+.dtbl td{padding:.75rem 1rem;font-size:.87rem;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+.dtbl tr:last-child td{border-bottom:none}
+.dtbl tbody tr:hover td{background:#F8FAFC}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 16px;border-radius:12px;background:#1E293B;color:#fff;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:8px;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateY(0)}
+.shimmer{background:linear-gradient(90deg,#F8FAFC 25%,#E2E8F0 50%,#F8FAFC 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:8px}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+@media(max-width:768px){.app{grid-template-columns:1fr}aside{position:fixed;left:-280px;top:0;height:100%;box-shadow:10px 0 30px rgba(0,0,0,.1)}.app.mobile-open aside{left:0}.veh-hero{flex-direction:column}.status-grid{grid-template-columns:1fr 1fr}}
+/* SERVICE HUB TABS */
+.svc-tabs{background:var(--bg-card);border-bottom:1px solid #E2E8F0;padding:0 1.5rem;display:flex;gap:0;overflow-x:auto;border-radius:var(--radius-lg) var(--radius-lg) 0 0}.svc-tabs::-webkit-scrollbar{height:0}
+.stb{padding:14px 20px;background:transparent;border:none;border-bottom:2px solid transparent;font-size:.82rem;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:7px;white-space:nowrap;transition:.2s}
+.stb:hover{color:var(--accent)}.stb.active{color:var(--accent);border-bottom-color:var(--accent)}
+.stb-pane{display:none;padding:1.5rem;animation:fadeIn .3s ease}.stb-pane.active{display:block}
+.ticket-card{border:1.5px solid #E2E8F0;border-radius:var(--radius-md);padding:1rem;margin-bottom:.75rem;transition:.2s}.ticket-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(37,99,235,.07)}
+.sched-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<aside id="sidebar">
+  <a href="#" class="brand-logo"><i class="fa-solid fa-cube"></i><span class="brand-text">TruFleetX</span></a>
+  <nav class="nav-menu">
+    <div class="nav-label">Pilot Portal</div>
+    <a href="dashboard_driver.html" class="nav-item"><i class="fa-solid fa-gauge-high"></i><span class="brand-text">Dashboard</span></a>
+    <a href="MyTrips_driver.html" class="nav-item"><i class="fa-solid fa-route"></i><span class="brand-text">My Trips</span></a>
+    <a href="Vehicle_status_driver.html" class="nav-item active"><i class="fa-solid fa-truck-front"></i><span class="brand-text">My Vehicle</span></a>
+    <a href="Documents_driver.html" class="nav-item"><i class="fa-solid fa-folder-open"></i><span class="brand-text">Documents</span></a>
+    <a href="support_driver.html" class="nav-item"><i class="fa-solid fa-headset"></i><span class="brand-text">Support</span></a>
+    <div class="nav-spacer"></div>
+    <a href="../login.html" class="nav-item" style="color:var(--danger)" onclick="localStorage.clear()"><i class="fa-solid fa-arrow-right-from-bracket"></i><span class="brand-text">Sign Out</span></a>
+  </nav>
+</aside>
+<main>
+  <header>
+    <div class="hdr-left">
+      <button class="toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></button>
+      <div><div class="page-title">My Vehicle</div><div class="page-sub">Status, maintenance &amp; issue reporting</div></div>
+    </div>
+    <div class="hdr-right">
+      <div class="profile-chip">
+        <span class="live-dot"></span>
+        <img id="profileImg" class="profile-img" src="" alt=""/>
+        <div><div class="pname" id="profileName">Loading…</div><div class="prole">Fleet Pilot</div></div>
+      </div>
+    </div>
+  </header>
+  <div class="content">
+    <div id="heroWrap">
+      <div class="veh-hero">
+        <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">
+          <div class="vh-icon"><i class="fa-solid fa-truck-front"></i></div>
+          <div>
+            <div class="vh-reg shimmer" style="height:32px;width:180px;margin-bottom:6px;background:rgba(255,255,255,.2)"></div>
+            <div class="vh-sub shimmer" style="height:16px;width:220px;background:rgba(255,255,255,.15)"></div>
+          </div>
+        </div>
+        <div class="vh-specs" id="vhSpecs"></div>
+      </div>
+    </div>
+    <div class="status-grid" id="statusGrid">
+      <div class="st-card"><div class="st-ico ic-b shimmer" style="height:46px"></div><div class="st-lbl shimmer" style="height:12px;width:80px;margin-bottom:6px"></div><div class="st-val shimmer" style="height:26px;width:60px"></div></div>
+      <div class="st-card"><div class="st-ico ic-g shimmer" style="height:46px"></div><div class="st-lbl shimmer" style="height:12px;width:80px;margin-bottom:6px"></div><div class="st-val shimmer" style="height:26px;width:60px"></div></div>
+      <div class="st-card"><div class="st-ico ic-o shimmer" style="height:46px"></div><div class="st-lbl shimmer" style="height:12px;width:80px;margin-bottom:6px"></div><div class="st-val shimmer" style="height:26px;width:60px"></div></div>
+    </div>
+    <!-- SERVICE HUB — Tabbed Panel -->
+    <div style="background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);overflow:hidden">
+      <div class="svc-tabs">
+        <button class="stb active" onclick="switchVTab('tickets')" id="vtab-tickets"><i class="fa-solid fa-ticket"></i> Service Tickets</button>
+        <button class="stb" onclick="switchVTab('schedule')" id="vtab-schedule"><i class="fa-solid fa-calendar-check"></i> Scheduled Services</button>
+        <button class="stb" onclick="switchVTab('report')" id="vtab-report"><i class="fa-solid fa-triangle-exclamation"></i> Report Issue</button>
+      </div>
+
+      <!-- TAB: SERVICE TICKETS -->
+      <div class="stb-pane active" id="vpane-tickets">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+          <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:var(--primary)">My Vehicle's Service Tickets</div>
+          <button class="btn-pri" style="padding:7px 14px;font-size:.8rem" onclick="loadOrders()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+        </div>
+        <div id="ticketsBodyV"><div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div></div>
+      </div>
+
+      <!-- TAB: SCHEDULED SERVICES -->
+      <div class="stb-pane" id="vpane-schedule">
+        <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:var(--primary);margin-bottom:1rem">Preventive Maintenance Schedule</div>
+        <div id="schedBodyV"><div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div></div>
+      </div>
+
+      <!-- TAB: REPORT ISSUE -->
+      <div class="stb-pane" id="vpane-report">
+        <div style="font-family:'Outfit',sans-serif;font-weight:600;font-size:.95rem;color:var(--primary);margin-bottom:1rem">Report a Vehicle Issue</div>
+        <div style="background:#FFFBEB;border:1.5px solid #FDE68A;border-radius:10px;padding:.875rem 1rem;margin-bottom:1.25rem;font-size:.82rem;color:#92400E"><i class="fa-solid fa-triangle-exclamation" style="margin-right:6px"></i>High-priority issues will immediately flag your vehicle for maintenance and alert your fleet manager.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-grp"><label class="form-lbl">Category <span style="color:var(--danger)">*</span></label>
+            <select class="form-sel" id="issCategory">
+              <option value="">Select category…</option>
+              <option value="engine">Engine / Mechanical</option>
+              <option value="brakes">Brakes</option>
+              <option value="tyres">Tyres / Wheels</option>
+              <option value="electrical">Electrical / Lights</option>
+              <option value="fuel">Fuel System</option>
+              <option value="body">Body / Exterior</option>
+              <option value="ac">AC / Cabin</option>
+              <option value="gps">GPS / Telematics</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-grp"><label class="form-lbl">Priority</label>
+            <select class="form-sel" id="issPriority">
+              <option value="low">Low — can wait</option>
+              <option value="medium" selected>Medium — schedule soon</option>
+              <option value="high">High — urgent attention</option>
+              <option value="critical">Critical — vehicle unsafe</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grp"><label class="form-lbl">Description <span style="color:var(--danger)">*</span></label>
+          <textarea class="form-ta" id="issDesc" placeholder="Describe the problem in detail — what you noticed, when it started, any unusual sounds or warning lights…" style="min-height:100px"></textarea>
+        </div>
+        <button class="btn-pri" id="issBtn" onclick="submitIssue()"><i class="fa-solid fa-paper-plane"></i>Submit Issue Report</button>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+<div class="toast" id="toast"><i id="tIco" class="fa-solid fa-circle-check"></i><span id="tMsg"></span></div>
+<script>
+const TOKEN=localStorage.getItem('trufleet_token')||'';
+if(!TOKEN){window.location.href='../login.html';}
+(function(){try{const p=JSON.parse(atob(TOKEN.split('.')[1]));if(!p||!['driver','admin','manager'].includes(p.role)){localStorage.clear();window.location.href='../login.html';}}catch{localStorage.clear();window.location.href='../login.html';}})();
+const api=(path,opts={})=>fetch('/api/driver'+path,{...opts,headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}}).then(async r=>{if(r.status===401){localStorage.clear();window.location.href='../login.html';}const d=await r.json();if(!r.ok)throw new Error(d.error||'Error');return d;});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+function toast(msg,ok=true){const el=document.getElementById('toast');document.getElementById('tIco').className=ok?'fa-solid fa-circle-check':'fa-solid fa-circle-xmark';el.style.background=ok?'#1E293B':'#EF4444';document.getElementById('tMsg').textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3800);}
+const app=document.getElementById('app'),sb=document.getElementById('sidebar');
+function toggleSidebar(){if(window.innerWidth<=768)app.classList.toggle('mobile-open');else app.classList.toggle('collapsed');}
+sb.addEventListener('mouseenter',()=>{if(window.innerWidth>768&&app.classList.contains('collapsed')){app.classList.remove('collapsed');sb.dataset.ae='1';}});
+sb.addEventListener('mouseleave',()=>{if(window.innerWidth>768&&sb.dataset.ae==='1'){app.classList.add('collapsed');sb.dataset.ae='0';}});
+async function loadProfile(){try{const d=await api('/me');const n=d.full_name||d.email?.split('@')[0]||'Pilot';document.getElementById('profileName').textContent=n;document.getElementById('profileImg').src=d.avatar_url||`https://ui-avatars.com/api/?name=${encodeURIComponent(n)}&background=EFF6FF&color=2563EB&rounded=true`;}catch{}}
+
+async function loadVehicle(){
+  try{
+    const res=await api('/vehicle');
+    const v=res.vehicle||{};const ins=res.insurance||{};
+    if(!v.id){
+      document.getElementById('heroWrap').innerHTML=`<div style="border:2px dashed #E2E8F0;border-radius:var(--radius-lg);padding:2.5rem;text-align:center;color:var(--text-muted);margin-bottom:1.5rem"><i class="fa-solid fa-truck-front" style="font-size:2rem;opacity:.35;display:block;margin-bottom:12px"></i><div style="font-weight:600;font-size:1rem;margin-bottom:6px">No Vehicle Assigned</div><div style="font-size:.88rem">Contact your dispatcher to be assigned a vehicle.</div></div>`;
+      document.getElementById('statusGrid').innerHTML='';return;
+    }
+    const statusBadge=v.status==='active'?'vh-b-ok':v.status==='maintenance'?'vh-b-wn':'vh-b-er';
+    document.getElementById('heroWrap').innerHTML=`
+      <div class="veh-hero">
+        <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">
+          <div class="vh-icon"><i class="fa-solid fa-truck-front"></i></div>
+          <div>
+            <div class="vh-reg">${esc(v.registration_number||'—')}</div>
+            <div class="vh-sub">${esc(v.make||'')} ${esc(v.model||'')} · ${esc(v.year||'')} · ${esc(v.type||'Truck')}</div>
+            <div class="vh-badge ${statusBadge}"><i class="fa-solid fa-circle" style="font-size:.45rem"></i>${(v.status||'unknown').toUpperCase()}</div>
+          </div>
+        </div>
+        <div class="vh-specs">
+          ${v.color?`<div class="vh-spec"><div class="vh-sl">Colour</div><div class="vh-sv">${esc(v.color)}</div></div>`:''}
+          ${v.capacity?`<div class="vh-spec"><div class="vh-sl">Capacity</div><div class="vh-sv">${esc(v.capacity)} T</div></div>`:''}
+          ${v.mileage?`<div class="vh-spec"><div class="vh-sl">Odometer</div><div class="vh-sv">${Number(v.mileage).toLocaleString()} mi</div></div>`:''}
+        </div>
+      </div>`;
+    // STATUS CARDS
+    const fuel=v.fuel_level??null;
+    const today=new Date();
+    const insExp=ins.expiry_date?new Date(ins.expiry_date):null;
+    const insDays=insExp?Math.ceil((insExp-today)/86400000):null;
+    const svcDate=v.next_service_date?new Date(v.next_service_date):null;
+    const svcDays=svcDate?Math.ceil((svcDate-today)/86400000):null;
+    const fuelColor=fuel==null?'#94A3B8':fuel>50?'#10B981':fuel>20?'#F59E0B':'#EF4444';
+    document.getElementById('statusGrid').innerHTML=`
+      <div class="st-card">
+        <div class="st-ico ic-b"><i class="fa-solid fa-gas-pump"></i></div>
+        <div class="st-lbl">Fuel Level</div>
+        <div class="st-val">${fuel!=null?fuel+'%':'—'}</div>
+        <div class="st-sub">${fuel==null?'No data':fuel>50?'Sufficient — good to go':fuel>20?'Low — plan a refuel soon':'Critical — refuel immediately'}</div>
+        ${fuel!=null?`<div class="prog-bar"><div class="prog-fill" style="width:${fuel}%;background:${fuelColor}"></div></div>`:''}
+      </div>
+      <div class="st-card">
+        <div class="st-ico ${insDays==null?'ic-b':insDays<=0?'ic-r':insDays<=30?'ic-o':'ic-g'}"><i class="fa-solid fa-file-shield"></i></div>
+        <div class="st-lbl">Policy Insurance</div>
+        <div class="st-val">${insDays==null?'—':insDays<=0?'Expired':insDays+'d'}</div>
+        <div class="st-sub">${insDays==null?'No policy on record':insDays<=0?'EXPIRED — vehicle grounded':insDays<=30?`Renew within ${insDays} days`:`Until ${fmt(ins.expiry_date)}`}</div>
+      </div>
+      <div class="st-card">
+        <div class="st-ico ${svcDays==null?'ic-b':svcDays<0?'ic-r':svcDays<=14?'ic-o':'ic-g'}"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="st-lbl">Next Service</div>
+        <div class="st-val">${svcDays==null?'—':svcDays<0?'Overdue':svcDays===0?'Today':svcDays+'d'}</div>
+        <div class="st-sub">${svcDays==null?'No service scheduled':svcDays<0?'Service overdue!':svcDays===0?'Service due today':`Scheduled: ${fmt(v.next_service_date)}`}</div>
+      </div>`;
+  }catch(e){document.getElementById('heroWrap').innerHTML=`<div style="padding:1.5rem;border-radius:16px;border:1.5px solid #FECACA;background:#FEF2F2;color:var(--danger);font-size:.88rem;margin-bottom:1.5rem"><i class="fa-solid fa-circle-xmark" style="margin-right:6px"></i>Could not load vehicle data. ${esc(e.message)}</div>`;}
+}
+
+async function loadMaintenance(){
+  try{
+    const d=await api('/vehicle/maintenance-history');const tbody=document.getElementById('maintBody');
+    if(!tbody)return;
+    const arr=Array.isArray(d)?d:d.records||[];
+    if(!arr.length){tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:.87rem">No maintenance records yet.</td></tr>`;return;}
+    const cm={completed:'bg',scheduled:'bb',pending:'bo',overdue:'br'};
+    tbody.innerHTML=arr.map(m=>`<tr>
+      <td style="font-size:.8rem;white-space:nowrap;color:var(--text-muted)">${fmt(m.service_date||m.created_at)}</td>
+      <td style="font-weight:500;font-size:.87rem">${esc(m.service_type||m.type||'—')}</td>
+      <td style="font-size:.82rem;color:var(--text-muted)">${m.mileage_at_service?Number(m.mileage_at_service).toLocaleString()+' mi':'—'}</td>
+      <td><span class="badge ${cm[m.status]||'bb'}" style="font-size:.7rem">${(m.status||'—').toUpperCase()}</span></td>
+    </tr>`).join('');
+  }catch{const tbody=document.getElementById('maintBody');if(tbody)tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.85rem">History unavailable.</td></tr>`;}
+}
+
+// ── TAB SWITCHER ─────────────────────────────────────────────────────────────
+function switchVTab(name){
+  document.querySelectorAll('.stb-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.stb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('vpane-'+name).classList.add('active');
+  document.getElementById('vtab-'+name).classList.add('active');
+}
+
+// ── SERVICE TICKETS (all WOs for driver's vehicle with live status) ───────────
+async function loadOrders(){
+  const el=document.getElementById('ticketsBodyV');
+  if(!el)return;
+  el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+  try{
+    const data=await api('/maintenance/orders');
+    if(!data.length){
+      el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-circle-check" style="color:var(--success);font-size:1.5rem;display:block;margin-bottom:8px"></i><div style="font-weight:600;margin-bottom:4px">All Clear!</div><div style="font-size:.85rem">No service tickets for your vehicle yet.</div></div>';
+      return;
+    }
+    const prCls={high:'br',medium:'bo',low:'bb',critical:'br'};
+    const stCls={scheduled:'bb','in-service':'bo','awaiting-parts':'bo',ready:'bg',completed:'bg'};
+    const stIcon={scheduled:'fa-calendar','in-service':'fa-gears','awaiting-parts':'fa-clock',ready:'fa-circle-check',completed:'fa-check-double'};
+    const stLabel={scheduled:'Scheduled','in-service':'In Service','awaiting-parts':'Awaiting Parts',ready:'Ready',completed:'Completed'};
+    el.innerHTML=data.map(o=>{
+      const pr=prCls[o.priority]||'bb';
+      const sc=stCls[o.status]||'bb';
+      const si=stIcon[o.status]||'fa-circle';
+      const sl=stLabel[o.status]||o.status;
+      const borderColor=o.priority==='high'?'var(--danger)':o.priority==='medium'?'var(--warning)':'var(--success)';
+      return `<div class="ticket-card" style="border-left:3px solid ${borderColor}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:.3rem">${esc(o.title)}</div>
+            ${o.description?`<div style="font-size:.8rem;color:var(--text-muted);margin-bottom:.4rem">${esc(o.description.substring(0,100))}${o.description.length>100?'…':''}</div>`:''}
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+              <span class="badge ${pr}" style="font-size:.68rem">${o.priority.toUpperCase()}</span>
+              <span style="font-size:.75rem;color:var(--text-muted)"><i class="fa-solid fa-calendar" style="margin-right:3px"></i>${fmt(o.scheduled_date||o.created_at)}</span>
+              ${o.mechanic_name?`<span style="font-size:.75rem;color:var(--text-muted)"><i class="fa-solid fa-user-gear" style="margin-right:3px"></i>${esc(o.mechanic_name)}</span>`:''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <span class="badge ${sc}" style="display:inline-flex;align-items:center;gap:5px;margin-bottom:.3rem"><i class="fa-solid ${si}" style="font-size:.65rem"></i>${sl}</span>
+            ${o.invoice_number?`<div style="font-size:.72rem;color:var(--text-muted)">Invoice: <strong>${esc(o.invoice_number)}</strong></div>`:''}
+            ${o.actual_cost?`<div style="font-size:.8rem;font-weight:700;color:var(--primary)">&#8377;${Number(o.actual_cost).toLocaleString('en-IN')}</div>`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<div style="color:var(--danger);padding:1rem;font-size:.85rem"><i class="fa-solid fa-circle-xmark"></i> ${esc(e.message)}</div>`;}
+}
+
+// ── SCHEDULED SERVICES (preventive schedule for driver's vehicle) ─────────────
+async function loadSchedule(){
+  const el=document.getElementById('schedBodyV');
+  if(!el)return;
+  el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+  try{
+    const data=await api('/maintenance/schedule');
+    const labels={oil_change:'Oil Change',tyre_rotation:'Tyre Rotation',brake_check:'Brake Check',engine_service:'Engine Service',filter_change:'Filter Change',battery_check:'Battery Check',ac_service:'AC Service',general_inspection:'General Inspection'};
+    if(!data.length){
+      el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-calendar-days" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:.35"></i><div style="font-weight:600;margin-bottom:4px">No Scheduled Services</div><div style="font-size:.85rem">Your fleet manager hasn\'t set any preventive schedules for your vehicle yet.</div></div>';
+      return;
+    }
+    el.innerHTML='<div class="sched-grid">'+data.map(s=>{
+      const st=s.status==='overdue'?['br','#FEF2F2','#DC262630']:s.status==='upcoming'?['bo','#FFFBEB','#D9770630']:['bg','#ECFDF5','#05966930'];
+      const dueStr=s.next_due_date?new Date(s.next_due_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—';
+      const daysLeft=s.next_due_date?Math.ceil((new Date(s.next_due_date)-new Date())/86400000):null;
+      const urgency=daysLeft!=null?(daysLeft<0?'Overdue by '+Math.abs(daysLeft)+'d':daysLeft===0?'Due today':'in '+daysLeft+'d'):'';
+      return `<div style="background:#F8FAFC;border:1.5px solid ${st[2]};border-radius:var(--radius-md);padding:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem">
+          <div style="font-weight:600;font-size:.88rem">${labels[s.service_type]||s.service_type}</div>
+          <span class="badge ${st[0]}" style="font-size:.67rem">${s.status}</span>
+        </div>
+        ${s.next_due_date?`<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.25rem"><i class="fa-solid fa-calendar-day" style="margin-right:4px"></i>Due: ${dueStr} ${urgency?'<strong style="color:#64748B">('+urgency+')</strong>':''}</div>`:''}
+        ${s.next_due_km?`<div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.25rem"><i class="fa-solid fa-gauge" style="margin-right:4px"></i>Due at: ${Number(s.next_due_km).toLocaleString()} km</div>`:''}
+        ${s.interval_days?`<div style="font-size:.74rem;color:var(--text-muted)">Every ${s.interval_days} days</div>`:''}
+        ${s.interval_km?`<div style="font-size:.74rem;color:var(--text-muted)">Every ${Number(s.interval_km).toLocaleString()} km</div>`:''}
+      </div>`;
+    }).join('')+'</div>';
+  }catch(e){el.innerHTML=`<div style="color:var(--danger);padding:1rem;font-size:.85rem"><i class="fa-solid fa-circle-xmark"></i> ${esc(e.message)}</div>`;}
+}
+
+async function submitIssue(){
+  const cat=document.getElementById('issCategory').value;
+  const desc=document.getElementById('issDesc').value.trim();
+  if(!cat){toast('Please select a category',false);return;}
+  if(!desc){toast('Please describe the issue',false);return;}
+  const btn=document.getElementById('issBtn');btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+  try{
+    await api('/vehicle/issue',{method:'POST',body:JSON.stringify({category:cat,priority:document.getElementById('issPriority').value,description:desc})});
+    toast('Issue reported successfully. Maintenance team notified.');
+    document.getElementById('issCategory').value='';document.getElementById('issPriority').value='medium';document.getElementById('issDesc').value='';
+    switchVTab('tickets');loadOrders();
+  }catch(e){toast(e.message,false);}finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-paper-plane"></i>Submit Issue Report';}
+}
+
+loadProfile();loadVehicle();loadOrders();loadSchedule();
+</script>
+</body>
+</html>

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Fleet Map | Trufleet Manager</title>
+
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- LEAFLET CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- SOCKET.IO CLIENT -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+        :root {
+            --primary:    #0F172A;
+            --accent:     #2563EB;
+            --accent-soft:#EFF6FF;
+            --bg-body:    #F1F5F9;
+            --bg-card:    #FFFFFF;
+            --text-main:  #1E293B;
+            --text-muted: #64748B;
+            --success:    #10B981;
+            --warning:    #F59E0B;
+            --danger:     #EF4444;
+            --orange:     #F97316;
+            --border:     #E2E8F0;
+            --sidebar-width: 280px;
+            --panel-width:   340px;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; outline:none; }
+        body { font-family:'Inter',sans-serif; background:var(--bg-body); color:var(--text-main); overflow:hidden; height:100vh; }
+
+        /* ── APP SHELL ── */
+        .app-shell {
+            display:grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            height: 100vh;
+        }
+
+        /* ── SIDEBAR ── */
+        aside {
+            background:var(--bg-card); border-right:1px solid var(--border);
+            padding:1.5rem 1rem; display:flex; flex-direction:column;
+            position:relative; z-index:60; overflow-y:auto;
+        }
+        .brand-logo {
+            display:flex; align-items:center; gap:12px;
+            padding:0 1rem 2rem; color:var(--primary); text-decoration:none;
+            font-family:'Outfit'; font-weight:700; font-size:1.4rem;
+        }
+        .nav-item {
+            display:flex; align-items:center; gap:16px; padding:12px 16px;
+            color:var(--text-muted); text-decoration:none; border-radius:12px;
+            transition:.3s; font-weight:500; margin-bottom:4px;
+        }
+        .nav-item:hover, .nav-item.active { background:var(--accent-soft); color:var(--accent); }
+        .nav-item i { width:18px; text-align:center; }
+
+        /* ── MAP AREA ── */
+        .map-area {
+            position:relative; display:flex; flex-direction:column;
+            height:100vh; overflow:hidden;
+        }
+
+        /* ── TOP BAR ── */
+        .top-bar {
+            background:rgba(255,255,255,.95); backdrop-filter:blur(12px);
+            border-bottom:1px solid var(--border);
+            padding:0 1.5rem; height:64px;
+            display:flex; align-items:center; justify-content:space-between;
+            flex-shrink:0; z-index:50; position:relative;
+        }
+        .top-bar-left { display:flex; align-items:center; gap:16px; }
+        .top-title { font-family:'Outfit'; font-weight:700; font-size:1.25rem; color:var(--primary); }
+        .live-badge {
+            display:flex; align-items:center; gap:6px;
+            background:rgba(16,185,129,.12); color:#059669;
+            padding:4px 12px; border-radius:20px; font-size:.78rem; font-weight:700;
+        }
+        .live-dot {
+            width:8px; height:8px; border-radius:50%; background:#10B981;
+            animation:pulse-dot 1.4s infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity:1; transform:scale(1); }
+            50%      { opacity:.4; transform:scale(.8); }
+        }
+        .stat-chips { display:flex; gap:10px; }
+        .stat-chip {
+            display:flex; align-items:center; gap:6px; padding:6px 14px;
+            background:var(--bg-body); border:1px solid var(--border);
+            border-radius:20px; font-size:.8rem; font-weight:600; color:var(--text-main);
+        }
+        .stat-chip i { font-size:.75rem; }
+
+        /* ── MAP WRAPPER ── */
+        .map-wrapper {
+            flex:1; position:relative; overflow:hidden;
+        }
+        #liveMap { width:100%; height:100%; }
+
+        /* ── TRIP PANEL (right slide-in) ── */
+        .trip-panel {
+            position:absolute; top:0; right:-360px; width:var(--panel-width);
+            height:100%; background:rgba(255,255,255,.97); backdrop-filter:blur(16px);
+            border-left:1px solid var(--border);
+            box-shadow:-8px 0 32px rgba(0,0,0,.08);
+            transition:.4s cubic-bezier(.25,1,.5,1);
+            z-index:55; display:flex; flex-direction:column; overflow:hidden;
+        }
+        .trip-panel.open { right:0; }
+
+        .panel-header {
+            padding:1.2rem 1.5rem; border-bottom:1px solid var(--border);
+            display:flex; justify-content:space-between; align-items:center;
+            flex-shrink:0;
+        }
+        .panel-header-title { font-family:'Outfit'; font-weight:700; font-size:1rem; color:var(--primary); }
+        .panel-close {
+            background:none; border:none; cursor:pointer; font-size:1.1rem;
+            color:var(--text-muted); width:32px; height:32px; border-radius:8px;
+            display:flex; align-items:center; justify-content:center; transition:.2s;
+        }
+        .panel-close:hover { background:var(--bg-body); color:var(--primary); }
+
+        .trip-list { flex:1; overflow-y:auto; padding:1rem; }
+        .trip-card {
+            background:var(--bg-body); border:1px solid var(--border);
+            border-radius:14px; padding:1rem 1.2rem; margin-bottom:.75rem;
+            cursor:pointer; transition:.3s; position:relative;
+        }
+        .trip-card:hover, .trip-card.selected {
+            border-color:var(--accent);
+            box-shadow:0 0 0 3px rgba(37,99,235,.1);
+        }
+        .trip-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.5rem; }
+        .trip-driver-name { font-weight:600; font-size:.9rem; color:var(--primary); }
+        .trip-vehicle-reg { font-size:.75rem; color:var(--text-muted); margin-top:2px; }
+        .trip-route { font-size:.78rem; color:var(--text-muted); margin-bottom:.6rem; }
+        .trip-route i { color:var(--accent); margin-right:4px; }
+        .trip-meta { display:flex; gap:8px; flex-wrap:wrap; }
+        .trip-meta-item {
+            display:flex; align-items:center; gap:4px; font-size:.72rem;
+            background:white; border:1px solid var(--border);
+            padding:2px 8px; border-radius:8px; color:var(--text-muted);
+        }
+        .speed-badge {
+            position:absolute; top:1rem; right:1rem;
+            background:var(--accent); color:white;
+            padding:3px 8px; border-radius:8px; font-size:.72rem; font-weight:700;
+        }
+        .no-trips {
+            text-align:center; padding:3rem 1rem; color:var(--text-muted); font-size:.88rem;
+        }
+        .no-trips i { font-size:2.5rem; margin-bottom:1rem; opacity:.3; display:block; }
+
+        /* ── TOGGLE PANEL FAB ── */
+        .panel-toggle-fab {
+            position:absolute; top:50%; right:0; transform:translateY(-50%);
+            background:var(--accent); color:white; border:none; cursor:pointer;
+            width:36px; height:72px; border-radius:12px 0 0 12px;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:-4px 0 12px rgba(37,99,235,.3);
+            z-index:56; transition:.3s;
+        }
+        .panel-toggle-fab:hover { background:#1D4ED8; }
+
+        /* ── DRIVER DETAIL POPUP ── */
+        .driver-popup {
+            position:absolute; bottom:24px; left:24px;
+            background:rgba(255,255,255,.98); backdrop-filter:blur(20px);
+            border:1px solid var(--border); border-radius:20px;
+            padding:1.25rem 1.5rem; min-width:300px;
+            box-shadow:0 20px 40px rgba(0,0,0,.12);
+            z-index:55; display:none;
+            animation:slideUpPop .3s ease;
+        }
+        .driver-popup.show { display:block; }
+        @keyframes slideUpPop {
+            from { opacity:0; transform:translateY(16px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .popup-close {
+            position:absolute; top:12px; right:12px;
+            background:none; border:none; cursor:pointer; color:var(--text-muted);
+            font-size:.9rem; width:28px; height:28px; border-radius:8px;
+            display:flex; align-items:center; justify-content:center; transition:.2s;
+        }
+        .popup-close:hover { background:var(--bg-body); }
+        .popup-driver-name { font-family:'Outfit'; font-weight:700; font-size:1.1rem; margin-bottom:4px; }
+        .popup-vehicle-reg { font-size:.8rem; color:var(--text-muted); margin-bottom:1rem; }
+        .popup-grid { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+        .popup-stat { background:var(--bg-body); border-radius:10px; padding:.6rem .8rem; }
+        .popup-stat-label { font-size:.7rem; color:var(--text-muted); margin-bottom:2px; }
+        .popup-stat-value { font-weight:700; font-size:1rem; color:var(--primary); }
+        .popup-route { margin-top:.75rem; padding:.75rem; background:var(--accent-soft); border-radius:12px; font-size:.82rem; }
+        .popup-route-label { font-size:.7rem; color:var(--accent); font-weight:600; margin-bottom:4px; }
+        .popup-speed-bar { margin-top:.75rem; }
+        .speed-bar-track {
+            height:6px; background:#E2E8F0; border-radius:3px; overflow:hidden; margin-top:4px;
+        }
+        .speed-bar-fill {
+            height:100%; background:linear-gradient(90deg,#10B981,#2563EB);
+            border-radius:3px; transition:width .8s ease;
+        }
+
+        /* ── LEAFLET CUSTOM MARKERS ── */
+        .driver-marker-icon {
+            width:44px; height:44px; border-radius:50%;
+            border:3px solid white; box-shadow:0 4px 12px rgba(0,0,0,.25);
+            display:flex; align-items:center; justify-content:center;
+            font-size:1.1rem; color:white; position:relative;
+            transition: transform .3s ease;
+        }
+        .driver-marker-icon.moving { animation:bounce-marker .6s infinite alternate; }
+        @keyframes bounce-marker {
+            from { transform:translateY(0); }
+            to   { transform:translateY(-4px); }
+        }
+        .marker-pulse {
+            position:absolute; inset:-8px; border-radius:50%;
+            border:2px solid rgba(37,99,235,.4);
+            animation:pulse-ring 2s infinite;
+        }
+        @keyframes pulse-ring {
+            0%   { transform:scale(.8); opacity:1; }
+            100% { transform:scale(1.6); opacity:0; }
+        }
+        /* Leaflet popup override */
+        .leaflet-popup-content-wrapper {
+            border-radius:14px !important;
+            box-shadow:0 10px 30px rgba(0,0,0,.12) !important;
+            padding:0 !important;
+        }
+        .leaflet-popup-content { margin:0 !important; }
+        .leaflet-popup-tip-container { display:none; }
+
+        /* ── MAP CONTROLS ── */
+        .map-controls {
+            position:absolute; top:16px; left:16px; z-index:50;
+            display:flex; flex-direction:column; gap:8px;
+        }
+        .map-ctrl-btn {
+            background:white; border:none; cursor:pointer; width:40px; height:40px;
+            border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.1);
+            display:flex; align-items:center; justify-content:center;
+            color:var(--text-muted); font-size:.95rem; transition:.2s;
+        }
+        .map-ctrl-btn:hover { color:var(--accent); transform:scale(1.05); }
+        .map-ctrl-btn.active { background:var(--accent); color:white; }
+
+        /* ── TRAIL LINE ── */
+        /* handled via leaflet polyline */
+
+        /* ── LAST UPDATE TICKER ── */
+        .update-ticker {
+            position:absolute; bottom:16px; right:360px;
+            background:rgba(15,23,42,.75); color:white;
+            padding:6px 14px; border-radius:20px; font-size:.75rem;
+            backdrop-filter:blur(8px); z-index:50; transition:right .4s;
+        }
+        .trip-panel.open ~ .update-ticker { right:360px; }
+
+        @media (max-width:1100px) {
+            .app-shell { grid-template-columns:1fr; }
+            aside { display:none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+    <!-- ── SIDEBAR ── -->
+    <aside>
+        <a href="Dashboard_manager.html" class="brand-logo">
+            <i class="fa-solid fa-cube" style="color:var(--accent);font-size:1.6rem;"></i>
+            Trufleet
+        </a>
+        <nav>
+            <a href="Dashboard_manager.html" class="nav-item"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
+            <a href="LiveMap_manager.html"   class="nav-item active"><i class="fa-solid fa-location-dot"></i> Live Map</a>
+            <a href="View_fleet_manager.html" class="nav-item"><i class="fa-solid fa-truck-front"></i> View Fleet</a>
+            <a href="Drivers_manager.html"   class="nav-item"><i class="fa-solid fa-id-card"></i> View Drivers</a>
+            <a href="Maintenance_manager.html" class="nav-item"><i class="fa-solid fa-wrench"></i> Maintenance</a>
+            <a href="#" onclick="logout()" class="nav-item" style="color:var(--danger);margin-top:auto">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ── MAP AREA ── -->
+    <div class="map-area" id="mapArea">
+
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <span class="top-title">Live Fleet Map</span>
+                <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+            </div>
+            <div class="stat-chips">
+                <div class="stat-chip"><i class="fa-solid fa-truck" style="color:var(--accent)"></i> <span id="activeCount">0</span> On Road</div>
+                <div class="stat-chip"><i class="fa-solid fa-gauge-high" style="color:var(--warning)"></i> Avg <span id="avgSpeed">0</span> km/h</div>
+                <div class="stat-chip"><i class="fa-solid fa-clock" style="color:var(--success)"></i> <span id="lastUpdateTime">—</span></div>
+            </div>
+        </div>
+
+        <!-- MAP -->
+        <div class="map-wrapper">
+            <div id="liveMap"></div>
+
+            <!-- Custom map controls -->
+            <div class="map-controls">
+                <button class="map-ctrl-btn" id="btnFitAll" title="Fit all vehicles" onclick="fitAllMarkers()">
+                    <i class="fa-solid fa-compress-arrows-alt"></i>
+                </button>
+                <button class="map-ctrl-btn" id="btnTrails" title="Toggle trails" onclick="toggleTrails()">
+                    <i class="fa-solid fa-route"></i>
+                </button>
+                <button class="map-ctrl-btn" id="btnDark" title="Toggle dark map" onclick="toggleDarkMap()">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+
+            <!-- PANEL TOGGLE FAB -->
+            <button class="panel-toggle-fab" id="panelFab" onclick="togglePanel()" title="Toggle trip panel">
+                <i class="fa-solid fa-chevron-left" id="panelFabIcon"></i>
+            </button>
+
+            <!-- DRIVER POPUP -->
+            <div class="driver-popup" id="driverPopup">
+                <button class="popup-close" onclick="closePopup()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="popup-driver-name" id="popupName">—</div>
+                <div class="popup-vehicle-reg" id="popupVehicle">—</div>
+                <div class="popup-grid">
+                    <div class="popup-stat">
+                        <div class="popup-stat-label">Speed</div>
+                        <div class="popup-stat-value" id="popupSpeed">0 <small style="font-size:.6rem;font-weight:400">km/h</small></div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-label">Heading</div>
+                        <div class="popup-stat-value" id="popupHeading">N</div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-label">Lat</div>
+                        <div class="popup-stat-value" id="popupLat">—</div>
+                    </div>
+                    <div class="popup-stat">
+                        <div class="popup-stat-label">Lng</div>
+                        <div class="popup-stat-value" id="popupLng">—</div>
+                    </div>
+                </div>
+                <div class="popup-route">
+                    <div class="popup-route-label"><i class="fa-solid fa-route"></i> ACTIVE ROUTE</div>
+                    <span id="popupRoute">—</span>
+                </div>
+                <div class="popup-speed-bar">
+                    <div style="font-size:.7rem;color:var(--text-muted)">Speed meter (0–120 km/h)</div>
+                    <div class="speed-bar-track"><div class="speed-bar-fill" id="popupSpeedBar" style="width:0%"></div></div>
+                </div>
+            </div>
+
+            <!-- LAST UPDATE TICKER -->
+            <div class="update-ticker" id="updateTicker">Waiting for location data…</div>
+        </div>
+
+        <!-- TRIP PANEL -->
+        <div class="trip-panel open" id="tripPanel">
+            <div class="panel-header">
+                <span class="panel-header-title"><i class="fa-solid fa-location-dot" style="color:var(--accent);margin-right:6px"></i>Active Trips</span>
+                <button class="panel-close" onclick="togglePanel()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="trip-list" id="tripList">
+                <div class="no-trips">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    Waiting for live location data from drivers…<br>
+                    <small style="margin-top:8px;display:block">Start the Python simulator to see drivers appear on the map in real time.</small>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /map-area -->
+</div><!-- /app-shell -->
+
+<!-- LEAFLET JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// AUTH GUARD
+// ════════════════════════════════════════════════════════════════
+const TOKEN = localStorage.getItem('trufleet_token');
+if (!TOKEN) location.href = '../login.html';
+function parseJwt(t) { try { return JSON.parse(atob(t.split('.')[1])); } catch { return null; } }
+const ME = parseJwt(TOKEN);
+if (!ME || ME.role !== 'manager') { localStorage.clear(); location.href = '../login.html'; }
+function logout() { localStorage.clear(); location.href = '../login.html'; }
+
+const AUTH_HEADERS = { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN };
+
+// ════════════════════════════════════════════════════════════════
+// MAP SETUP — Chennai centre
+// ════════════════════════════════════════════════════════════════
+const CHENNAI = [13.0827, 80.2707];
+
+const lightTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap contributors', maxZoom:19
+});
+const darkTile = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'© OpenStreetMap © CARTO', maxZoom:19
+});
+
+const map = L.map('liveMap', {
+    center: CHENNAI, zoom: 12,
+    zoomControl: false,
+    layers: [lightTile]
+});
+L.control.zoom({ position:'bottomright' }).addTo(map);
+
+let isDark = false;
+function toggleDarkMap() {
+    isDark = !isDark;
+    if (isDark) { map.removeLayer(lightTile); map.addLayer(darkTile); }
+    else        { map.removeLayer(darkTile);  map.addLayer(lightTile); }
+    document.getElementById('btnDark').classList.toggle('active', isDark);
+}
+
+// ════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════
+const drivers   = {};          // driver_id → { marker, trail, data, trailPoints }
+let showTrails  = true;
+let selectedId  = null;
+const TRAIL_MAX = 40;          // max trail points to keep per driver
+
+const COLORS = [
+    '#2563EB','#10B981','#F59E0B','#EF4444',
+    '#8B5CF6','#EC4899','#14B8A6','#F97316','#06B6D4'
+];
+let colorIdx = 0;
+function nextColor() { return COLORS[colorIdx++ % COLORS.length]; }
+
+// ════════════════════════════════════════════════════════════════
+// CUSTOM MARKER
+// ════════════════════════════════════════════════════════════════
+function makeDivIcon(color, moving) {
+    const movingClass = moving ? 'moving' : '';
+    return L.divIcon({
+        html: `<div class="driver-marker-icon ${movingClass}" style="background:${color}">
+                   <i class="fa-solid fa-truck-front"></i>
+                   <div class="marker-pulse" style="border-color:${color}88"></div>
+               </div>`,
+        className:'', iconSize:[44,44], iconAnchor:[22,22], popupAnchor:[0,-26]
+    });
+}
+
+// ════════════════════════════════════════════════════════════════
+// PROCESS INCOMING LOCATION UPDATE
+// ════════════════════════════════════════════════════════════════
+function processUpdate(loc) {
+    const id = loc.driver_id;
+
+    if (!drivers[id]) {
+        // New driver — create marker + trail
+        const color = nextColor();
+        const marker = L.marker([loc.lat, loc.lng], { icon: makeDivIcon(color, loc.speed>2) })
+            .addTo(map)
+            .on('click', () => selectDriver(id));
+
+        const trail = L.polyline([], { color, weight:3, opacity:.6, dashArray:'6 4' })
+            .addTo(map);
+        if (!showTrails) trail.setStyle({ opacity:0 });
+
+        drivers[id] = { marker, trail, color, data: loc, trailPoints:[] };
+    }
+
+    const d = drivers[id];
+    d.data = loc;
+
+    // Smooth animated move
+    animateTo(d.marker, [loc.lat, loc.lng]);
+    d.marker.setIcon(makeDivIcon(d.color, loc.speed > 2));
+
+    // Trail
+    d.trailPoints.push([loc.lat, loc.lng]);
+    if (d.trailPoints.length > TRAIL_MAX) d.trailPoints.shift();
+    d.trail.setLatLngs(d.trailPoints);
+
+    // Refresh selected popup
+    if (selectedId === id) showPopup(loc);
+
+    // Refresh side panel
+    refreshPanel();
+    updateHeader();
+
+    // Last update time
+    document.getElementById('updateTicker').textContent =
+        'Last update: ' + new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+
+// Leaflet doesn't animate marker movement natively — we interpolate
+function animateTo(marker, target) {
+    const start   = marker.getLatLng();
+    const startT  = performance.now();
+    const dur     = 800; // ms
+
+    function step(now) {
+        const t = Math.min((now - startT) / dur, 1);
+        const ease = t < .5 ? 2*t*t : -1+(4-2*t)*t;
+        marker.setLatLng([
+            start.lat + (target[0] - start.lat) * ease,
+            start.lng + (target[1] - start.lng) * ease
+        ]);
+        if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// ════════════════════════════════════════════════════════════════
+// SIDE PANEL
+// ════════════════════════════════════════════════════════════════
+function refreshPanel() {
+    const list = document.getElementById('tripList');
+    const entries = Object.values(drivers);
+    if (!entries.length) {
+        list.innerHTML = `<div class="no-trips"><i class="fa-solid fa-satellite-dish"></i>Waiting for live location data…</div>`;
+        return;
+    }
+    list.innerHTML = entries.map(d => {
+        const loc  = d.data;
+        const sel  = selectedId === loc.driver_id ? 'selected' : '';
+        const spd  = Math.round(loc.speed || 0);
+        const head = headingLabel(loc.heading || 0);
+        return `<div class="trip-card ${sel}" onclick="selectDriver('${loc.driver_id}')">
+            <div class="trip-card-header">
+                <div>
+                    <div class="trip-driver-name">${esc(loc.driver_name)}</div>
+                    <div class="trip-vehicle-reg"><i class="fa-solid fa-truck" style="color:${d.color};margin-right:4px"></i>${esc(loc.vehicle_reg)}</div>
+                </div>
+                <span class="speed-badge">${spd} km/h</span>
+            </div>
+            <div class="trip-route"><i class="fa-solid fa-location-dot"></i>${esc(loc.origin)} <i class="fa-solid fa-arrow-right" style="margin:0 4px"></i>${esc(loc.destination)}</div>
+            <div class="trip-meta">
+                <div class="trip-meta-item"><i class="fa-solid fa-compass"></i>${head}</div>
+                <div class="trip-meta-item"><i class="fa-solid fa-clock"></i>${timeAgo(loc.updated_at)}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function updateHeader() {
+    const entries = Object.values(drivers);
+    document.getElementById('activeCount').textContent = entries.length;
+    const speeds = entries.map(d => d.data.speed || 0);
+    const avg = speeds.length ? Math.round(speeds.reduce((a,b)=>a+b,0)/speeds.length) : 0;
+    document.getElementById('avgSpeed').textContent = avg;
+    document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ════════════════════════════════════════════════════════════════
+// DRIVER POPUP (bottom-left)
+// ════════════════════════════════════════════════════════════════
+function selectDriver(id) {
+    selectedId = id;
+    const d = drivers[id];
+    if (!d) return;
+
+    // Pan map
+    map.panTo([d.data.lat, d.data.lng], { animate:true, duration:.8 });
+
+    // Highlight card
+    document.querySelectorAll('.trip-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.trip-card').forEach(c => {
+        if (c.onclick && c.onclick.toString().includes(id)) c.classList.add('selected');
+    });
+    refreshPanel();
+
+    showPopup(d.data);
+}
+
+function showPopup(loc) {
+    const popup = document.getElementById('driverPopup');
+    document.getElementById('popupName').textContent    = loc.driver_name;
+    document.getElementById('popupVehicle').textContent = loc.vehicle_reg;
+    document.getElementById('popupSpeed').innerHTML     = `${Math.round(loc.speed||0)} <small style="font-size:.6rem;font-weight:400">km/h</small>`;
+    document.getElementById('popupHeading').textContent = headingLabel(loc.heading||0);
+    document.getElementById('popupLat').textContent     = loc.lat.toFixed(5);
+    document.getElementById('popupLng').textContent     = loc.lng.toFixed(5);
+    document.getElementById('popupRoute').textContent   = `${loc.origin} → ${loc.destination}`;
+    const pct = Math.min(100, Math.round((loc.speed||0)/120*100));
+    document.getElementById('popupSpeedBar').style.width = pct + '%';
+    popup.classList.add('show');
+}
+
+function closePopup() {
+    document.getElementById('driverPopup').classList.remove('show');
+    selectedId = null;
+    document.querySelectorAll('.trip-card').forEach(c => c.classList.remove('selected'));
+}
+
+// ════════════════════════════════════════════════════════════════
+// PANEL + TRAILS + FIT
+// ════════════════════════════════════════════════════════════════
+let panelOpen = true;
+function togglePanel() {
+    panelOpen = !panelOpen;
+    const panel = document.getElementById('tripPanel');
+    const icon  = document.getElementById('panelFabIcon');
+    const ticker = document.getElementById('updateTicker');
+    if (panelOpen) {
+        panel.classList.add('open');
+        icon.className = 'fa-solid fa-chevron-right';
+        ticker.style.right = '360px';
+    } else {
+        panel.classList.remove('open');
+        icon.className = 'fa-solid fa-chevron-left';
+        ticker.style.right = '16px';
+    }
+    // Invalidate map size after animation
+    setTimeout(() => map.invalidateSize(), 420);
+}
+
+function toggleTrails() {
+    showTrails = !showTrails;
+    document.getElementById('btnTrails').classList.toggle('active', showTrails);
+    Object.values(drivers).forEach(d =>
+        d.trail.setStyle({ opacity: showTrails ? .6 : 0 })
+    );
+}
+
+function fitAllMarkers() {
+    const locs = Object.values(drivers).map(d => [d.data.lat, d.data.lng]);
+    if (!locs.length) { map.setView(CHENNAI, 12); return; }
+    map.fitBounds(L.latLngBounds(locs), { padding:[60,60] });
+}
+
+// ════════════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════════════
+function headingLabel(deg) {
+    const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+    return dirs[Math.round(deg/45) % 8];
+}
+function timeAgo(iso) {
+    const s = (Date.now() - new Date(iso)) / 1000;
+    if (s < 5)   return 'just now';
+    if (s < 60)  return Math.round(s) + 's ago';
+    if (s < 3600) return Math.round(s/60) + 'm ago';
+    return Math.round(s/3600) + 'h ago';
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s??''); return d.innerHTML; }
+
+// ════════════════════════════════════════════════════════════════
+// SOCKET.IO — real-time updates
+// ════════════════════════════════════════════════════════════════
+const socket = io({ auth: { token: TOKEN } });
+
+socket.on('connect',          () => console.log('[Socket] connected:', socket.id));
+socket.on('disconnect',       () => console.log('[Socket] disconnected'));
+socket.on('location:update',  loc  => processUpdate(loc));
+
+// ════════════════════════════════════════════════════════════════
+// INITIAL LOAD — fetch any locations already in memory
+// ════════════════════════════════════════════════════════════════
+async function loadInitialLocations() {
+    try {
+        const res = await fetch('/api/dispatch/live-locations', { headers: AUTH_HEADERS });
+        if (!res.ok) return;
+        const locs = await res.json();
+        locs.forEach(loc => processUpdate(loc));
+        if (locs.length) fitAllMarkers();
+    } catch (e) {
+        console.warn('[LiveMap] initial load error:', e.message);
+    }
+}
+
+// ════════════════════════════════════════════════════════════════
+// STALE MARKER CLEANUP — remove drivers inactive > 10 min
+// ════════════════════════════════════════════════════════════════
+setInterval(() => {
+    const tenMin = 10 * 60 * 1000;
+    const now = Date.now();
+    Object.keys(drivers).forEach(id => {
+        const d = drivers[id];
+        if (now - new Date(d.data.updated_at).getTime() > tenMin) {
+            map.removeLayer(d.marker);
+            map.removeLayer(d.trail);
+            delete drivers[id];
+            refreshPanel();
+            updateHeader();
+        }
+    });
+}, 60000);
+
+// ════════════════════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+    loadInitialLocations();
+    // Resize map on sidebar toggle
+    window.addEventListener('resize', () => map.invalidateSize());
+});
+</script>
+</body>
+</html>

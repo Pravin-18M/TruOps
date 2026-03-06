@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Maintenance Hub | Trufleet Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --primary:#0F172A;--accent:#2563EB;--accent-soft:#EFF6FF;
+  --bg-body:#F1F5F9;--bg-card:#FFFFFF;
+  --text-main:#334155;--text-muted:#64748B;
+  --success:#10B981;--warning:#F59E0B;--danger:#EF4444;--purple:#7C3AED;
+  --border:#E2E8F0;--sidebar-width:280px;--header-height:72px;
+  --shadow-card:0 4px 6px -1px rgba(0,0,0,.05);
+  --shadow-hover:0 10px 20px -3px rgba(0,0,0,.08);
+  --radius-lg:16px;--radius-md:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;outline:none}
+body{font-family:'Inter',sans-serif;background:var(--bg-body);color:var(--text-main);overflow-x:hidden}
+.layout{display:grid;grid-template-columns:var(--sidebar-width) 1fr;height:100vh}
+aside{background:var(--bg-card);border-right:1px solid var(--border);padding:1.5rem 1rem;display:flex;flex-direction:column;height:100vh;position:sticky;top:0;z-index:50}
+.brand-logo{display:flex;align-items:center;gap:12px;padding:0 1rem 2.5rem;color:var(--primary);text-decoration:none;font-family:'Outfit';font-weight:700;font-size:1.4rem}
+.nav-item{display:flex;align-items:center;gap:16px;padding:11px 16px;color:var(--text-muted);text-decoration:none;border-radius:10px;transition:.25s;font-weight:500;margin-bottom:3px}
+.nav-item:hover,.nav-item.active{background:var(--accent-soft);color:var(--accent)}
+.nav-item i{min-width:20px;text-align:center}
+.nav-spacer{flex:1}
+main{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+header{height:var(--header-height);background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;flex-shrink:0;gap:1rem;flex-wrap:wrap}
+.page-title{font-family:'Outfit';font-weight:700;font-size:1.35rem;color:var(--primary)}
+.hdr-right{display:flex;align-items:center;gap:.75rem}
+.tab-bar{background:var(--bg-card);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;gap:2px;overflow-x:auto;flex-shrink:0}
+.tab-bar::-webkit-scrollbar{height:0}
+.tb{padding:14px 20px;background:transparent;border:none;border-bottom:2px solid transparent;font-size:.85rem;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:'Inter';display:flex;align-items:center;gap:7px;white-space:nowrap;transition:.2s}
+.tb:hover{color:var(--accent)}.tb.active{color:var(--accent);border-bottom-color:var(--accent)}
+.alert-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);display:inline-block}
+.content-scroll{flex:1;overflow-y:auto}
+.tab-pane{display:none;padding:2rem;animation:fadeIn .35s ease}
+.tab-pane.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.25rem;margin-bottom:1.75rem}
+.kpi-card{background:var(--bg-card);padding:1.5rem;border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);transition:.3s}
+.kpi-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-3px)}
+.kpi-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:1rem}
+.ic-b{background:#EFF6FF;color:#2563EB}.ic-g{background:#ECFDF5;color:#10B981}.ic-o{background:#FFF7ED;color:#F59E0B}.ic-r{background:#FEF2F2;color:#EF4444}.ic-p{background:#F5F3FF;color:#7C3AED}
+.kpi-val{font-family:'Outfit';font-size:1.9rem;font-weight:700;color:var(--primary);display:block;margin-bottom:3px}
+.kpi-lbl{color:var(--text-muted);font-size:.82rem;font-weight:500}
+.panel{background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);padding:1.5rem}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.pt{font-family:'Outfit';font-weight:600;font-size:1.05rem;color:var(--primary);display:flex;align-items:center;gap:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;align-items:start}
+.k-col{background:#F8FAFC;border-radius:var(--radius-lg);padding:1rem;min-height:200px}
+.k-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.k-title{font-family:'Outfit';font-weight:600;font-size:.85rem;color:var(--primary)}
+.k-cnt{background:#E2E8F0;color:var(--text-muted);padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700}
+.k-card{background:#fff;border-radius:var(--radius-md);padding:.875rem;box-shadow:var(--shadow-card);margin-bottom:.75rem;cursor:pointer;border:1.5px solid transparent;transition:.2s}
+.k-card:hover{border-color:var(--accent);box-shadow:var(--shadow-hover)}
+.k-card.p-high{border-left:3px solid var(--danger)}.k-card.p-medium{border-left:3px solid var(--warning)}.k-card.p-low{border-left:3px solid var(--success)}
+.ptag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700}
+.ptag.high{background:#FEF2F2;color:#DC2626}.ptag.medium{background:#FFFBEB;color:#D97706}.ptag.low{background:#F0FDF4;color:#166534}
+.k-card-title{font-weight:600;font-size:.88rem;margin:.5rem 0 .3rem}
+.k-card-meta{font-size:.76rem;color:var(--text-muted)}
+.k-empty{text-align:center;padding:2rem 1rem;font-size:.82rem;color:var(--text-muted);border:2px dashed #E2E8F0;border-radius:10px;margin-top:.5rem}
+.alert-card{display:flex;align-items:flex-start;gap:1rem;padding:1rem;border-radius:var(--radius-md);margin-bottom:.75rem;border:1.5px solid}
+.alert-danger{background:#FEF2F2;border-color:#FECACA}.alert-warning{background:#FFFBEB;border-color:#FDE68A}.alert-info{background:#EFF6FF;border-color:#BFDBFE}
+.alert-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.95rem}
+.ic-danger{background:#FEE2E2;color:#DC2626}.ic-warning{background:#FEF3C7;color:#D97706}.ic-info{background:#DBEAFE;color:#2563EB}
+.alert-title{font-weight:600;font-size:.88rem;margin-bottom:3px}
+.alert-sub{font-size:.78rem;color:var(--text-muted)}
+.dtbl{width:100%;border-collapse:collapse}
+.dtbl th{text-align:left;padding:.75rem 1rem;font-size:.775rem;color:var(--text-muted);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+.dtbl td{padding:.75rem 1rem;font-size:.86rem;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+.dtbl tr:last-child td{border-bottom:none}
+.dtbl tbody tr:hover td{background:#F8FAFC}
+.badge{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+.b-ok{background:#ECFDF5;color:#059669}.b-warn{background:#FFFBEB;color:#D97706}.b-err{background:#FEF2F2;color:#DC2626}.b-blue{background:#EFF6FF;color:#2563EB}.b-gray{background:#F1F5F9;color:#64748B}.b-purple{background:#F5F3FF;color:#7C3AED}
+.vendor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem}
+.v-card{background:var(--bg-card);border-radius:var(--radius-lg);border:1.5px solid var(--border);padding:1.25rem;box-shadow:var(--shadow-card);transition:.25s}
+.v-card:hover{border-color:var(--accent);box-shadow:var(--shadow-hover)}
+.v-name{font-family:'Outfit';font-weight:600;font-size:1rem;color:var(--primary);margin-bottom:.35rem}
+.v-meta{font-size:.8rem;color:var(--text-muted);display:flex;flex-direction:column;gap:5px;margin-bottom:.75rem}
+.v-meta span{display:flex;align-items:center;gap:6px}
+.stars{color:#F59E0B;font-size:.8rem;letter-spacing:1px}
+.hbar{height:8px;border-radius:20px;background:#E2E8F0;overflow:hidden;margin-top:6px}
+.hfill{height:100%;border-radius:20px;transition:width .7s ease}
+.form-grp{margin-bottom:1rem}
+.form-lbl{display:block;font-size:.82rem;font-weight:600;color:var(--text-main);margin-bottom:.4rem}
+.form-inp,.form-sel,.form-ta{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.875rem;font-family:'Inter';color:var(--text-main);transition:.2s;background:#fff}
+.form-inp:focus,.form-sel:focus,.form-ta:focus{border-color:var(--accent)}
+.form-ta{resize:vertical;min-height:72px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.btn-pri{padding:9px 20px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Inter';display:inline-flex;align-items:center;gap:7px;transition:.2s}
+.btn-pri:hover{background:#1D4ED8}.btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.btn-sec{padding:9px 18px;border:1.5px solid var(--border);border-radius:9px;background:transparent;font-size:.85rem;font-weight:600;cursor:pointer;color:var(--text-muted);font-family:'Inter';transition:.2s}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{padding:6px 12px;border:1.5px solid #FECACA;border-radius:8px;background:#FEF2F2;color:#DC2626;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Inter';transition:.2s}
+.btn-danger:hover{background:#FEE2E2}
+.btn-sm{padding:5px 12px;border:none;border-radius:7px;background:var(--accent);color:#fff;font-size:.78rem;font-weight:600;cursor:pointer;font-family:'Inter';display:inline-flex;align-items:center;gap:5px;transition:.2s}
+.btn-sm:hover{background:#1D4ED8}
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.3s}
+.overlay.show{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:20px;width:min(580px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,.18);padding:2rem;transform:translateY(14px);transition:.35s}
+.overlay.show .modal{transform:translateY(0)}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+.mt{font-family:'Outfit';font-weight:700;font-size:1.1rem;color:var(--primary)}
+.close-btn{background:transparent;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-muted);width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.close-btn:hover{background:#F1F5F9;color:var(--primary)}
+.mf{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+.shimmer{background:linear-gradient(90deg,#F8FAFC 25%,#E2E8F0 50%,#F8FAFC 75%);background-size:200% 100%;animation:shim 1.5s infinite;border-radius:8px}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.add-form-row{background:#F8FAFC;border:1.5px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;margin-bottom:1.25rem}
+.seg{display:flex;gap:.5rem;flex-wrap:wrap}
+.seg-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--text-muted);font-family:'Inter';transition:.2s}
+.seg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:12px;background:#1E293B;color:#fff;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:9px;max-width:380px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateY(0)}
+/* ── CALENDAR ──────────────────────────────────────────────────────────────── */
+.cal-hdr{display:grid;grid-template-columns:repeat(7,1fr);background:#F8FAFC;border-bottom:1px solid var(--border)}
+.cal-hdr span{text-align:center;padding:12px 0;font-size:.78rem;font-weight:700;color:var(--text-muted);letter-spacing:.02em;text-transform:uppercase}
+.cal-body{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-cell{min-height:110px;border-right:1px solid #F1F5F9;border-bottom:1px solid #F1F5F9;padding:6px 8px;position:relative;cursor:pointer;transition:background .15s}
+.cal-cell:nth-child(7n){border-right:none}
+.cal-cell:hover{background:#F8FAFC}
+.cal-cell.today{background:#EFF6FF}
+.cal-cell.other{background:#FAFAFA;opacity:.5}
+.cal-cell.selected{box-shadow:inset 0 0 0 2px var(--accent);border-radius:2px}
+.cal-day{font-size:.82rem;font-weight:600;color:var(--primary);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.cal-day .cd-today{background:var(--accent);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem}
+.cal-dots{display:flex;flex-direction:column;gap:3px}
+.cal-ev{display:flex;align-items:center;gap:4px;padding:2.5px 6px;border-radius:5px;font-size:.68rem;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.25}
+.cal-ev.ev-schedule{background:#EFF6FF;color:#2563EB}
+.cal-ev.ev-compliance{background:#FFFBEB;color:#D97706}
+.cal-ev.ev-work_order{background:#FEF2F2;color:#DC2626}
+.cal-cnt{position:absolute;top:6px;right:8px;background:var(--accent);color:#fff;font-size:.65rem;font-weight:800;padding:2px 6px;border-radius:10px;min-width:20px;text-align:center}
+.cal-detail-card{display:flex;align-items:flex-start;gap:1rem;padding:.875rem 0;border-bottom:1px solid #F1F5F9}
+.cal-detail-card:last-child{border-bottom:none}
+.cal-detail-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.95rem}
+.cal-detail-ico.ic-sched{background:#EFF6FF;color:#2563EB}
+.cal-detail-ico.ic-comp{background:#FFFBEB;color:#D97706}
+.cal-detail-ico.ic-wo{background:#FEF2F2;color:#DC2626}
+
+@media(max-width:1280px){.kanban{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1024px){.grid-2{grid-template-columns:1fr}.kanban{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.layout{grid-template-columns:1fr}aside{display:none}.kanban{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.cal-cell{min-height:70px}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <a href="#" class="brand-logo"><i class="fa-solid fa-cube" style="color:var(--accent)"></i> Trufleet</a>
+  <nav>
+    <a href="Dashboard_manager.html" class="nav-item"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
+    <a href="LiveMap_manager.html" class="nav-item"><i class="fa-solid fa-location-dot"></i> Live Map</a>
+    <a href="View_fleet_manager.html" class="nav-item"><i class="fa-solid fa-truck-front"></i> View Fleet</a>
+    <a href="Drivers_manager.html" class="nav-item"><i class="fa-solid fa-id-card"></i> View Drivers</a>
+    <a href="Maintenance_manager.html" class="nav-item active"><i class="fa-solid fa-wrench"></i> Maintenance</a>
+  </nav>
+  <div class="nav-spacer"></div>
+  <a href="#" onclick="logout()" class="nav-item" style="color:var(--danger)"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
+</aside>
+
+<main>
+  <header>
+    <div>
+      <div class="page-title">Maintenance Hub</div>
+      <div style="font-size:.78rem;color:var(--text-muted);margin-top:2px">Vehicle Health &amp; Service Operations</div>
+    </div>
+    <div class="hdr-right">
+      <button class="btn-pri" onclick="openModal('wo')"><i class="fa-solid fa-plus"></i> New Work Order</button>
+    </div>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tb active" onclick="switchTab('overview')" id="tab-overview"><i class="fa-solid fa-gauge-high"></i> Overview</button>
+    <button class="tb" onclick="switchTab('kanban')" id="tab-kanban"><i class="fa-solid fa-columns"></i> Work Orders</button>
+    <button class="tb" onclick="switchTab('schedules')" id="tab-schedules"><i class="fa-solid fa-calendar-check"></i> Schedules</button>
+    <button class="tb" onclick="switchTab('history')" id="tab-history"><i class="fa-solid fa-clock-rotate-left"></i> History</button>
+    <button class="tb" onclick="switchTab('health')" id="tab-health"><i class="fa-solid fa-heart-pulse"></i> Fleet Health</button>
+    <button class="tb" onclick="switchTab('compliance')" id="tab-compliance"><i class="fa-solid fa-shield-halved"></i> Compliance</button>
+    <button class="tb" onclick="switchTab('vendors')" id="tab-vendors"><i class="fa-solid fa-store"></i> Vendors</button>
+    <button class="tb" onclick="switchTab('calendar')" id="tab-calendar"><i class="fa-solid fa-calendar-days"></i> Calendar</button>
+    <button class="tb" onclick="switchTab('analytics')" id="tab-analytics"><i class="fa-solid fa-chart-line"></i> Analytics</button>
+  </div>
+
+  <div class="content-scroll">
+
+    <!-- TAB 1: OVERVIEW -->
+    <div class="tab-pane active" id="pane-overview">
+      <div class="kpi-row" id="kpiRow">
+        <div class="kpi-card"><div class="kpi-icon ic-r shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:60px;display:block;margin-bottom:4px"></span><span class="kpi-lbl">In Service</span></div>
+        <div class="kpi-card"><div class="kpi-icon ic-o shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:60px;display:block;margin-bottom:4px"></span><span class="kpi-lbl">Avg Downtime</span></div>
+        <div class="kpi-card"><div class="kpi-icon ic-b shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:60px;display:block;margin-bottom:4px"></span><span class="kpi-lbl">Month Cost</span></div>
+        <div class="kpi-card"><div class="kpi-icon ic-p shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:60px;display:block;margin-bottom:4px"></span><span class="kpi-lbl">Overdue Alerts</span></div>
+      </div>
+      <div class="grid-2" style="margin-bottom:1.5rem">
+        <div class="panel">
+          <div class="ph">
+            <div class="pt"><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning)"></i> Active Alerts</div>
+            <button class="btn-sm" onclick="loadAlerts()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+          </div>
+          <div id="alertsBody"><div style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-lg"></i></div></div>
+        </div>
+        <div class="panel">
+          <div class="ph"><div class="pt"><i class="fa-solid fa-chart-area" style="color:var(--accent)"></i> Monthly Cost (&#x20B9;k)</div></div>
+          <div id="costChart"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph">
+          <div class="pt"><i class="fa-solid fa-calendar-days" style="color:var(--success)"></i> Upcoming Preventive Services</div>
+          <button class="btn-sm" onclick="switchTab('schedules')">View All</button>
+        </div>
+        <div id="upcomingPreview"><div style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: KANBAN -->
+    <div class="tab-pane" id="pane-kanban">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+        <div>
+          <div style="font-family:'Outfit';font-weight:700;font-size:1.1rem;color:var(--primary)">Work Order Kanban</div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:3px">Click a card to update its status</div>
+        </div>
+        <button class="btn-pri" onclick="openModal('wo')"><i class="fa-solid fa-plus"></i> New Work Order</button>
+      </div>
+      <div class="kanban" id="kanbanBoard">
+        <div style="text-align:center;padding:3rem;color:var(--text-muted);grid-column:1/-1"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: SCHEDULES -->
+    <div class="tab-pane" id="pane-schedules">
+      <div class="ph" style="margin-bottom:1.25rem">
+        <div style="font-family:'Outfit';font-weight:700;font-size:1.1rem;color:var(--primary)">Preventive Maintenance Schedules</div>
+        <button class="btn-pri" onclick="toggleAddForm()"><i class="fa-solid fa-plus"></i> Add Schedule</button>
+      </div>
+      <div class="add-form-row" id="schedAddForm" style="display:none">
+        <div class="ph" style="margin-bottom:1rem">
+          <div class="pt">New Schedule</div>
+          <button class="close-btn" onclick="toggleAddForm()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="form-row">
+          <div class="form-grp"><label class="form-lbl">Vehicle *</label><select class="form-sel" id="sch-vehicle"><option value="">Select vehicle...</option></select></div>
+          <div class="form-grp"><label class="form-lbl">Service Type *</label>
+            <select class="form-sel" id="sch-type">
+              <option value="oil_change">Oil Change</option><option value="tyre_rotation">Tyre Rotation</option>
+              <option value="brake_check">Brake Check</option><option value="engine_service">Engine Service</option>
+              <option value="filter_change">Filter Change</option><option value="battery_check">Battery Check</option>
+              <option value="ac_service">AC Service</option><option value="general_inspection">General Inspection</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-grp"><label class="form-lbl">Interval km</label><input type="number" class="form-inp" id="sch-km" placeholder="e.g. 5000"/></div>
+          <div class="form-grp"><label class="form-lbl">Interval days</label><input type="number" class="form-inp" id="sch-days" placeholder="e.g. 90"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-grp"><label class="form-lbl">Last Service Date</label><input type="date" class="form-inp" id="sch-last-date"/></div>
+          <div class="form-grp"><label class="form-lbl">Last Service km</label><input type="number" class="form-inp" id="sch-last-km" placeholder="Odometer"/></div>
+        </div>
+        <div style="display:flex;gap:.75rem;margin-top:.5rem">
+          <button class="btn-pri" id="schSaveBtn" onclick="saveSchedule()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+          <button class="btn-sec" onclick="toggleAddForm()">Cancel</button>
+        </div>
+      </div>
+      <div class="panel"><div id="schedulesBody"><div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div></div></div>
+    </div>
+
+    <!-- TAB 4: HISTORY -->
+    <div class="tab-pane" id="pane-history">
+      <div class="ph" style="margin-bottom:1.25rem">
+        <div style="font-family:'Outfit';font-weight:700;font-size:1.1rem;color:var(--primary)">Service History</div>
+        <select class="form-sel" id="histVehicleFilter" style="width:240px" onchange="loadHistory()"><option value="">All Vehicles</option></select>
+      </div>
+      <div class="panel"><div id="historyBody"><div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div></div></div>
+    </div>
+
+    <!-- TAB 5: FLEET HEALTH -->
+    <div class="tab-pane" id="pane-health">
+      <div class="ph" style="margin-bottom:1.25rem">
+        <div style="font-family:'Outfit';font-weight:700;font-size:1.1rem;color:var(--primary)">Component Health</div>
+        <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+          <select class="form-sel" id="healthVehicleFilter" style="width:240px" onchange="loadComponents()"><option value="">All Vehicles</option></select>
+          <button class="btn-pri" onclick="openModal('comp')"><i class="fa-solid fa-pen-to-square"></i> Update Component</button>
+        </div>
+      </div>
+      <div id="healthBody"><div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div></div>
+    </div>
+
+    <!-- TAB 6: COMPLIANCE -->
+    <div class="tab-pane" id="pane-compliance">
+      <div class="ph" style="margin-bottom:1.25rem">
+        <div style="font-family:'Outfit';font-weight:700;font-size:1.1rem;color:var(--primary)">Compliance &amp; Certificates</div>
+        <button class="btn-pri" onclick="openModal('compliance')"><i class="fa-solid fa-plus"></i> Add Record</button>
+      </div>
+      <div class="kpi-row" id="complianceKpi" style="margin-bottom:1.5rem">
+        <div class="kpi-card"><div class="kpi-icon ic-g shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:60px;display:block"></span><span class="kpi-lbl">Valid</span></div>
+        <div class="kpi-card"><div class="kpi-icon ic-o shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:60px;display:block"></span><span class="kpi-lbl">Expiring Soon</span></div>
+        <div class="kpi-card"><div class="kpi-icon ic-r shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:60px;display:block"></span><span class="kpi-lbl">Expired</span></div>
+      </div>
+      <div class="panel"><div id="complianceBody"><div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div></div></div>
+    </div>
+
+    <!-- TAB 7: VENDORS -->
+    <div class="tab-pane" id="pane-vendors">
+      <div class="ph" style="margin-bottom:1.25rem">
+        <div style="font-family:'Outfit';font-weight:700;font-size:1.1rem;color:var(--primary)">Service Vendors</div>
+        <button class="btn-pri" onclick="openModal('vendor')"><i class="fa-solid fa-plus"></i> Add Vendor</button>
+      </div>
+      <div class="vendor-grid" id="vendorGrid"><div style="text-align:center;padding:3rem;color:var(--text-muted);grid-column:1/-1"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div></div>
+    </div>
+
+    <!-- TAB 9: CALENDAR -->
+    <div class="tab-pane" id="pane-calendar">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+        <div>
+          <div style="font-family:'Outfit';font-weight:700;font-size:1.2rem;color:var(--primary)">Renewal &amp; Service Calendar</div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:3px">All upcoming renewals, services &amp; work orders at a glance</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <button class="btn-sec" onclick="calNav(-1)" style="padding:8px 12px"><i class="fa-solid fa-chevron-left"></i></button>
+          <span id="calMonthLabel" style="font-family:'Outfit';font-weight:700;font-size:1.05rem;min-width:160px;text-align:center;color:var(--primary)"></span>
+          <button class="btn-sec" onclick="calNav(1)" style="padding:8px 12px"><i class="fa-solid fa-chevron-right"></i></button>
+          <button class="btn-sec" onclick="calToday()" style="margin-left:.5rem;font-size:.8rem"><i class="fa-solid fa-crosshairs"></i> Today</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.25rem;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;color:var(--text-muted)"><span style="width:10px;height:10px;border-radius:50%;background:#2563EB;display:inline-block"></span> Preventive Service</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;color:var(--text-muted)"><span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;display:inline-block"></span> Compliance / Renewal</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:600;color:var(--text-muted)"><span style="width:10px;height:10px;border-radius:50%;background:#EF4444;display:inline-block"></span> Work Order</span>
+      </div>
+      <div id="calGrid" style="background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);overflow:hidden"></div>
+      <!-- Day detail drawer -->
+      <div id="calDrawer" style="display:none;margin-top:1.25rem">
+        <div class="panel">
+          <div class="ph">
+            <div class="pt"><i class="fa-solid fa-calendar-day" style="color:var(--accent)"></i> <span id="calDrawerTitle"></span></div>
+            <button class="close-btn" onclick="document.getElementById('calDrawer').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div id="calDrawerBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 8: ANALYTICS -->
+    <div class="tab-pane" id="pane-analytics">
+      <div class="kpi-row" id="analyticsKpi" style="margin-bottom:1.5rem">
+        <div class="kpi-card"><div class="kpi-icon ic-b shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:80px;display:block;margin-bottom:4px"></span><span class="kpi-lbl">Completed Jobs</span></div>
+        <div class="kpi-card"><div class="kpi-icon ic-g shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:80px;display:block;margin-bottom:4px"></span><span class="kpi-lbl">Avg Downtime</span></div>
+        <div class="kpi-card"><div class="kpi-icon ic-o shimmer" style="height:46px"></div><span class="shimmer" style="height:28px;width:80px;display:block;margin-bottom:4px"></span><span class="kpi-lbl">Vehicles Down Now</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><div class="ph"><div class="pt"><i class="fa-solid fa-chart-column" style="color:var(--accent)"></i> Cost by Month (&#x20B9;k)</div></div><div id="analyticsChart"></div></div>
+        <div class="panel"><div class="ph"><div class="pt"><i class="fa-solid fa-chart-pie" style="color:var(--purple)"></i> Orders by Type</div></div><div id="typeChart"></div></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+</div>
+
+<!-- WORK ORDER MODAL -->
+<div class="overlay" id="woOverlay" onclick="if(event.target===this)closeModal('wo')">
+  <div class="modal">
+    <div class="mh"><span class="mt">Create Work Order</span><button class="close-btn" onclick="closeModal('wo')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Vehicle *</label><select class="form-sel" id="wo-vehicle"><option value="">Select vehicle...</option></select></div>
+      <div class="form-grp"><label class="form-lbl">Order Type</label><select class="form-sel" id="wo-type"><option value="corrective">Corrective</option><option value="proactive">Proactive / Preventive</option></select></div>
+    </div>
+    <div class="form-grp"><label class="form-lbl">Title *</label><input type="text" class="form-inp" id="wo-title" placeholder="e.g. Engine oil change"/></div>
+    <div class="form-grp"><label class="form-lbl">Description</label><textarea class="form-ta" id="wo-desc" placeholder="Describe the work required..."></textarea></div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Priority</label><select class="form-sel" id="wo-priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+      <div class="form-grp"><label class="form-lbl">Scheduled Date</label><input type="date" class="form-inp" id="wo-date"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Mechanic / Technician</label><input type="text" class="form-inp" id="wo-mechanic" placeholder="Name"/></div>
+      <div class="form-grp"><label class="form-lbl">Estimated Cost (&#x20B9;)</label><input type="number" class="form-inp" id="wo-cost" placeholder="0"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Odometer Reading (km)</label><input type="number" class="form-inp" id="wo-odo" placeholder="Current km"/></div>
+      <div class="form-grp"><label class="form-lbl">Parts ETA (if applicable)</label><input type="text" class="form-inp" id="wo-eta" placeholder="e.g. 2 days for clutch"/></div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('wo')">Cancel</button>
+      <button class="btn-pri" id="woSaveBtn" onclick="saveWorkOrder()"><i class="fa-solid fa-floppy-disk"></i> Create Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS MODAL -->
+<div class="overlay" id="statusOverlay" onclick="if(event.target===this)closeModal('status')">
+  <div class="modal">
+    <div class="mh"><span class="mt">Update Order Status</span><button class="close-btn" onclick="closeModal('status')"><i class="fa-solid fa-xmark"></i></button></div>
+    <input type="hidden" id="statusOrderId"/>
+    <div class="form-grp"><label class="form-lbl">Order</label><p id="statusOrderLabel" style="font-weight:600;font-size:.95rem;color:var(--primary);padding:6px 0"></p></div>
+    <div class="form-grp"><label class="form-lbl">New Status</label>
+      <div class="seg" id="statusBtns">
+        <button class="seg-btn" data-s="scheduled">Scheduled</button>
+        <button class="seg-btn" data-s="in-service">In Service</button>
+        <button class="seg-btn" data-s="awaiting-parts">Awaiting Parts</button>
+        <button class="seg-btn" data-s="ready">Ready</button>
+        <button class="seg-btn" data-s="completed">Completed</button>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('status')">Cancel</button>
+      <button class="btn-pri" onclick="confirmStatusUpdate()"><i class="fa-solid fa-check"></i> Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLIANCE MODAL -->
+<div class="overlay" id="complianceOverlay" onclick="if(event.target===this)closeModal('compliance')">
+  <div class="modal">
+    <div class="mh"><span class="mt">Add Compliance Record</span><button class="close-btn" onclick="closeModal('compliance')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Vehicle *</label><select class="form-sel" id="comp-vehicle"><option value="">Select vehicle...</option></select></div>
+      <div class="form-grp"><label class="form-lbl">Record Type *</label>
+        <select class="form-sel" id="comp-type">
+          <option value="pollution_cert">Pollution Certificate (PUC)</option>
+          <option value="fitness_cert">Fitness Certificate</option>
+          <option value="national_permit">National Permit</option>
+          <option value="state_permit">State Permit</option>
+          <option value="road_tax">Road Tax</option>
+          <option value="goods_permit">Goods Carriage Permit</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Issue Date</label><input type="date" class="form-inp" id="comp-issued"/></div>
+      <div class="form-grp"><label class="form-lbl">Expiry Date *</label><input type="date" class="form-inp" id="comp-expiry"/></div>
+    </div>
+    <div class="form-grp"><label class="form-lbl">Issuing Authority</label><input type="text" class="form-inp" id="comp-authority" placeholder="e.g. RTO Chennai"/></div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('compliance')">Cancel</button>
+      <button class="btn-pri" id="compSaveBtn" onclick="saveCompliance()"><i class="fa-solid fa-floppy-disk"></i> Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- VENDOR MODAL -->
+<div class="overlay" id="vendorOverlay" onclick="if(event.target===this)closeModal('vendor')">
+  <div class="modal">
+    <div class="mh"><span class="mt">Add Service Vendor</span><button class="close-btn" onclick="closeModal('vendor')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="form-grp"><label class="form-lbl">Vendor Name *</label><input type="text" class="form-inp" id="v-name" placeholder="e.g. Srinivas Auto Works"/></div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Contact Person</label><input type="text" class="form-inp" id="v-contact" placeholder="Name"/></div>
+      <div class="form-grp"><label class="form-lbl">Phone</label><input type="text" class="form-inp" id="v-phone" placeholder="+91 XXXXXXXXXX"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Specialization</label>
+        <select class="form-sel" id="v-spec">
+          <option value="general">General Repairs</option><option value="tyres">Tyres</option>
+          <option value="engine">Engine</option><option value="electrical">Electrical</option>
+          <option value="body">Body Work</option><option value="ac">AC / Cooling</option>
+          <option value="authorized_dealer">Authorized Dealer</option>
+        </select>
+      </div>
+      <div class="form-grp"><label class="form-lbl">City</label><input type="text" class="form-inp" id="v-city" placeholder="City"/></div>
+    </div>
+    <div class="form-grp"><label class="form-lbl">Address</label><input type="text" class="form-inp" id="v-address" placeholder="Full address"/></div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('vendor')">Cancel</button>
+      <button class="btn-pri" id="vendorSaveBtn" onclick="saveVendor()"><i class="fa-solid fa-floppy-disk"></i> Add Vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE MODAL -->
+<div class="overlay" id="invoiceOverlay" onclick="if(event.target===this)closeModal('invoice')">
+  <div class="modal" style="max-width:640px">
+    <div class="mh"><span class="mt"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--purple)"></i> Service Invoice</span><button class="close-btn" onclick="closeModal('invoice')"><i class="fa-solid fa-xmark"></i></button></div>
+    <input type="hidden" id="inv-orderId"/>
+    <div id="invOrderInfo" style="background:#F8FAFC;border-radius:10px;padding:1rem;margin-bottom:1.25rem;font-size:.85rem"></div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Invoice Number</label><input type="text" class="form-inp" id="inv-number" placeholder="INV-2026-001"/></div>
+      <div class="form-grp"><label class="form-lbl">Invoice Total (&#x20B9;)</label><input type="number" class="form-inp" id="inv-total" placeholder="0"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Actual Service Cost (&#x20B9;)</label><input type="number" class="form-inp" id="inv-actual" placeholder="Labour + Parts"/></div>
+      <div class="form-grp"><label class="form-lbl">Parts Cost (&#x20B9;)</label><input type="number" class="form-inp" id="inv-parts" placeholder="Spares only"/></div>
+    </div>
+    <div class="form-grp"><label class="form-lbl">Invoice Notes</label><textarea class="form-ta" id="inv-notes" placeholder="Parts replaced, warranty info, technician remarks…"></textarea></div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('invoice')">Cancel</button>
+      <button class="btn-sec" id="invSaveBtn" onclick="saveInvoice()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+      <button class="btn-pri" id="invPdfBtn" onclick="downloadInvoicePDF()"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPONENT MODAL -->
+<div class="overlay" id="compOverlay" onclick="if(event.target===this)closeModal('comp')">
+  <div class="modal">
+    <div class="mh"><span class="mt">Update Component Health</span><button class="close-btn" onclick="closeModal('comp')"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Vehicle *</label><select class="form-sel" id="cmp-vehicle"><option value="">Select vehicle...</option></select></div>
+      <div class="form-grp"><label class="form-lbl">Component *</label>
+        <select class="form-sel" id="cmp-name">
+          <option value="Battery">Battery</option><option value="Brakes">Brakes</option>
+          <option value="Tyres">Tyres</option><option value="Engine">Engine</option>
+          <option value="Transmission">Transmission</option><option value="AC">AC / Cooling</option>
+          <option value="Lights">Lights / Electrical</option><option value="GPS">GPS / Telematics</option>
+          <option value="Suspension">Suspension</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl">Health % (0-100)</label><input type="number" class="form-inp" id="cmp-health" min="0" max="100" placeholder="e.g. 85"/></div>
+      <div class="form-grp"><label class="form-lbl">Last Replaced / Serviced</label><input type="date" class="form-inp" id="cmp-date"/></div>
+    </div>
+    <div class="form-grp"><label class="form-lbl">Notes</label><input type="text" class="form-inp" id="cmp-notes" placeholder="Optional notes"/></div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('comp')">Cancel</button>
+      <button class="btn-pri" id="cmpSaveBtn" onclick="saveComponent()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i id="tIco" class="fa-solid fa-circle-check"></i><span id="tMsg"></span></div>
+
+<script>
+const TOKEN=localStorage.getItem('trufleet_token');
+if(!TOKEN)location.href='../login.html';
+(function(){try{const p=JSON.parse(atob(TOKEN.split('.')[1]));if(!p||!['manager','admin'].includes(p.role)){localStorage.clear();location.href='../login.html';}}catch{localStorage.clear();location.href='../login.html';}})();
+function logout(){localStorage.clear();location.href='../login.html';}
+const api=(path,opts={})=>fetch('/api/manager'+path,{...opts,headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}}).then(async r=>{if(r.status===401){localStorage.clear();location.href='../login.html';}const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d;});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(iso){if(!iso)return'-';return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+function fmtMoney(v){if(!v&&v!==0)return'-';return String.fromCharCode(8377)+Number(v).toLocaleString('en-IN');}
+function daysUntil(d){if(!d)return null;return Math.ceil((new Date(d)-new Date())/86400000);}
+function healthColor(p){if(p>=75)return'var(--success)';if(p>=40)return'var(--warning)';return'var(--danger)';}
+function toast(msg,ok=true){const el=document.getElementById('toast');document.getElementById('tIco').className=ok?'fa-solid fa-circle-check':'fa-solid fa-circle-xmark';el.style.background=ok?'#1E293B':'#EF4444';document.getElementById('tMsg').textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3800);}
+
+// TAB SWITCHING
+const tabLoaded={};
+function switchTab(name){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pane-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(!tabLoaded[name]){tabLoaded[name]=true;
+    if(name==='kanban')loadKanban();
+    if(name==='schedules')loadSchedules();
+    if(name==='history')loadHistory();
+    if(name==='health')loadComponents();
+    if(name==='compliance')loadCompliance();
+    if(name==='vendors')loadVendors();
+    if(name==='analytics')loadAnalytics();
+    if(name==='calendar')loadCalendar();
+  }
+}
+
+// VEHICLES DROPDOWN
+let allVehicles=[];
+async function loadVehicles(){
+  try{
+    const data=await api('/fleet');
+    allVehicles=data;
+    const label=v=>v.registration_number+' - '+v.make+' '+v.model;
+    const allOpts='<option value="">Select vehicle...</option>'+data.map(v=>'<option value="'+v.id+'">'+esc(label(v))+'</option>').join('');
+    ['wo-vehicle','comp-vehicle','cmp-vehicle'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=allOpts;});
+    const filterOpts='<option value="">All Vehicles</option>'+data.map(v=>'<option value="'+v.id+'">'+esc(label(v))+'</option>').join('');
+    ['histVehicleFilter','healthVehicleFilter'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=filterOpts;});
+    const schV=document.getElementById('sch-vehicle');if(schV)schV.innerHTML=allOpts;
+  }catch(e){console.error('vehicles error:',e);}
+}
+
+// OVERVIEW
+async function loadOverview(){loadKpis();loadAlerts();loadCostChart();loadUpcomingPreview();}
+async function loadKpis(){
+  try{
+    const[stats,dt,alerts]=await Promise.all([api('/maintenance/stats'),api('/maintenance/downtime'),api('/maintenance/alerts')]);
+    const oc=(alerts.overdue||[]).length;
+    document.getElementById('kpiRow').innerHTML=
+      '<div class="kpi-card"><div class="kpi-icon ic-r"><i class="fa-solid fa-tools"></i></div><span class="kpi-val">'+( stats.vehiclesInService||0)+'</span><span class="kpi-lbl">Vehicles In Service</span></div>'+
+      '<div class="kpi-card"><div class="kpi-icon ic-o"><i class="fa-solid fa-clock"></i></div><span class="kpi-val">'+(dt.avgDowntimeDays||'0')+' <small style="font-size:1rem">days</small></span><span class="kpi-lbl">Avg Downtime</span></div>'+
+      '<div class="kpi-card"><div class="kpi-icon ic-b"><i class="fa-solid fa-indian-rupee-sign"></i></div><span class="kpi-val">'+(stats.monthCost>0?String.fromCharCode(8377)+Number(stats.monthCost).toLocaleString('en-IN'):String.fromCharCode(8377)+'0')+'</span><span class="kpi-lbl">Cost This Month</span></div>'+
+      '<div class="kpi-card"><div class="kpi-icon '+(oc>0?'ic-r':'ic-g')+'"><i class="fa-solid fa-triangle-exclamation"></i></div><span class="kpi-val" style="color:'+(oc>0?'var(--danger)':'var(--success)')+'">'+oc+'</span><span class="kpi-lbl">Overdue Alerts</span></div>';
+  }catch(e){console.error(e);}
+}
+async function loadAlerts(){
+  const el=document.getElementById('alertsBody');
+  try{
+    const{overdue,upcoming,compliance}=await api('/maintenance/alerts');
+    let html='';
+    if(!overdue.length&&!upcoming.length&&!compliance.length){html='<div style="text-align:center;padding:1.5rem;color:var(--text-muted)"><i class="fa-solid fa-circle-check" style="color:var(--success);font-size:1.5rem;display:block;margin-bottom:8px"></i>No active alerts</div>';}
+    overdue.forEach(o=>{const v=o.vehicle?esc(o.vehicle.registration_number)+' '+esc(o.vehicle.make):'';html+='<div class="alert-card alert-danger"><div class="alert-ico ic-danger"><i class="fa-solid fa-circle-exclamation"></i></div><div><div class="alert-title">OVERDUE: '+esc(o.title)+'</div><div class="alert-sub">'+v+' - Was due '+fmt(o.scheduled_date)+'</div></div></div>';});
+    upcoming.forEach(o=>{const d=daysUntil(o.scheduled_date);const v=o.vehicle?esc(o.vehicle.registration_number):'';html+='<div class="alert-card alert-warning"><div class="alert-ico ic-warning"><i class="fa-solid fa-calendar-day"></i></div><div><div class="alert-title">Due in '+d+'d: '+esc(o.title)+'</div><div class="alert-sub">'+v+' - Scheduled '+fmt(o.scheduled_date)+'</div></div></div>';});
+    compliance.forEach(r=>{const d=daysUntil(r.expiry_date);const v=r.vehicle?esc(r.vehicle.registration_number):'';html+='<div class="alert-card alert-info"><div class="alert-ico ic-info"><i class="fa-solid fa-shield-halved"></i></div><div><div class="alert-title">'+compLabel(r.record_type)+' expires in '+d+'d</div><div class="alert-sub">'+v+' - Expires '+fmt(r.expiry_date)+'</div></div></div>';});
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="color:var(--danger);padding:1rem">Failed to load alerts.</div>';}
+}
+async function loadUpcomingPreview(){
+  const el=document.getElementById('upcomingPreview');
+  try{
+    const data=await api('/maintenance/schedules');
+    const active=data.filter(s=>s.status==='upcoming'||s.status==='overdue').slice(0,5);
+    const labels={oil_change:'Oil Change',tyre_rotation:'Tyre Rotation',brake_check:'Brake Check',engine_service:'Engine Service',filter_change:'Filter Change',battery_check:'Battery Check',ac_service:'AC Service',general_inspection:'General Inspection'};
+    if(!active.length){el.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--text-muted)">No upcoming services</div>';return;}
+    el.innerHTML=active.map(s=>{
+      const v=s.vehicle?esc(s.vehicle.registration_number)+' - '+esc(s.vehicle.make):'';
+      const due=s.next_due_date?'Due '+fmt(s.next_due_date):'';
+      const st=s.status==='overdue'?'b-err':'b-warn';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F1F5F9"><div><div style="font-weight:600;font-size:.88rem">'+(labels[s.service_type]||s.service_type)+'</div><div style="font-size:.78rem;color:var(--text-muted)">'+v+'</div></div><div style="text-align:right"><span class="badge '+st+'">'+s.status+'</span><div style="font-size:.76rem;color:var(--text-muted);margin-top:3px">'+due+'</div></div></div>';
+    }).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--danger);padding:1rem">Failed.</div>';}
+}
+let costChartInst=null;
+async function loadCostChart(){
+  try{
+    const data=await api('/maintenance/cost-chart');
+    if(costChartInst)costChartInst.destroy();
+    costChartInst=new ApexCharts(document.getElementById('costChart'),{series:[{name:'Cost ('+String.fromCharCode(8377)+'k)',data:data.map(d=>d.cost)}],chart:{type:'area',height:200,toolbar:{show:false},fontFamily:'Inter'},colors:['#2563EB'],dataLabels:{enabled:false},stroke:{curve:'smooth',width:3},fill:{type:'gradient',gradient:{shadeIntensity:1,opacityFrom:.45,opacityTo:.05,stops:[0,90,100]}},xaxis:{categories:data.map(d=>d.month),axisBorder:{show:false},labels:{style:{colors:'#64748B'}}},yaxis:{show:false},grid:{show:false},tooltip:{y:{formatter:v=>String.fromCharCode(8377)+(v*1000).toLocaleString('en-IN')}}});
+    costChartInst.render();
+  }catch(e){document.getElementById('costChart').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:2rem">No cost data yet</p>';}
+}
+
+// KANBAN
+const COLS=[{key:'scheduled',label:'Scheduled'},{key:'in-service',label:'In Service'},{key:'awaiting-parts',label:'Awaiting Parts'},{key:'ready',label:'Ready'},{key:'completed',label:'Completed'}];
+async function loadKanban(){
+  const board=document.getElementById('kanbanBoard');
+  try{
+    const orders=await api('/maintenance');
+    const byS={};COLS.forEach(c=>byS[c.key]=[]);
+    orders.forEach(o=>{if(byS[o.status])byS[o.status].push(o);});
+    board.innerHTML=COLS.map(col=>{
+      const cards=byS[col.key];
+      return '<div class="k-col"><div class="k-head"><span class="k-title">'+col.label+'</span><span class="k-cnt">'+cards.length+'</span></div><div>'+
+        (cards.length?cards.map(o=>kanbanCard(o)).join(''):'<div class="k-empty">No orders</div>')+
+        '</div></div>';
+    }).join('');
+  }catch(e){board.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--danger);padding:2rem">Failed to load work orders.</div>';}
+}
+function kanbanCard(o){
+  const v=o.vehicle?esc(o.vehicle.registration_number):'';
+  const m=o.mechanic_name?'<div class="k-card-meta">'+esc(o.mechanic_name)+'</div>':'';
+  const c=o.actual_cost?'<div class="k-card-meta">'+fmtMoney(o.actual_cost)+'</div>':(o.estimated_cost?'<div class="k-card-meta">Est: '+fmtMoney(o.estimated_cost)+'</div>':'');
+  const inv=o.invoice_number?'<div class="k-card-meta" style="color:var(--success);font-size:.72rem"><i class="fa-solid fa-file-invoice-dollar"></i> '+esc(o.invoice_number)+'</div>':'';
+  return '<div class="k-card p-'+o.priority+'" onclick="openStatusModal(\''+o.id+'\',\''+esc(o.title)+'\',\''+o.status+'\')">'+'<span class="ptag '+o.priority+'">'+o.priority+'</span><div class="k-card-title">'+esc(o.title)+'</div><div class="k-card-meta">'+v+'</div>'+m+c+inv+'<button class="btn-sm" style="margin-top:.5rem;width:100%;justify-content:center;background:#F5F3FF;color:#7C3AED;border:1.5px solid #DDD6FE" onclick="event.stopPropagation();openInvoiceModal(\''+o.id+'\')" ><i class="fa-solid fa-file-invoice-dollar"></i> Invoice</button></div>';
+}
+
+// STATUS MODAL
+let curStatusId=null;
+function openStatusModal(id,title,status){
+  curStatusId=id;
+  document.getElementById('statusOrderId').value=id;
+  document.getElementById('statusOrderLabel').textContent=title;
+  document.querySelectorAll('#statusBtns .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.s===status));
+  document.querySelectorAll('#statusBtns .seg-btn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('#statusBtns .seg-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');};});
+  document.getElementById('statusOverlay').classList.add('show');
+}
+async function confirmStatusUpdate(){
+  const id=document.getElementById('statusOrderId').value;
+  const ns=document.querySelector('#statusBtns .seg-btn.active')?.dataset.s;
+  if(!ns){toast('Select a status first.',false);return;}
+  try{await api('/maintenance/'+id+'/status',{method:'PATCH',body:JSON.stringify({status:ns})});toast('Status updated to '+ns);closeModal('status');tabLoaded.kanban=false;if(document.getElementById('pane-kanban').classList.contains('active'))loadKanban();}
+  catch(e){toast(e.message,false);}
+}
+
+// WORK ORDER
+async function saveWorkOrder(){
+  const btn=document.getElementById('woSaveBtn');
+  const vid=document.getElementById('wo-vehicle').value,title=document.getElementById('wo-title').value.trim();
+  if(!vid||!title){toast('Vehicle and title are required.',false);return;}
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+  try{
+    await api('/maintenance',{method:'POST',body:JSON.stringify({vehicle_id:vid,title,description:document.getElementById('wo-desc').value.trim()||null,priority:document.getElementById('wo-priority').value,order_type:document.getElementById('wo-type').value,mechanic_name:document.getElementById('wo-mechanic').value.trim()||null,scheduled_date:document.getElementById('wo-date').value||null,estimated_cost:document.getElementById('wo-cost').value||null,odometer_reading:document.getElementById('wo-odo').value||null,eta_parts:document.getElementById('wo-eta').value.trim()||null})});
+    toast('Work order created!');closeModal('wo');tabLoaded.kanban=false;tabLoaded.overview=false;if(document.getElementById('pane-kanban').classList.contains('active'))loadKanban();loadKpis();
+  }catch(e){toast(e.message,false);}
+  finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Create Order';}
+}
+
+// SCHEDULES
+function toggleAddForm(){const f=document.getElementById('schedAddForm');f.style.display=f.style.display==='block'?'none':'block';}
+async function loadSchedules(){
+  const el=document.getElementById('schedulesBody');
+  try{
+    const data=await api('/maintenance/schedules');
+    const labels={oil_change:'Oil Change',tyre_rotation:'Tyre Rotation',brake_check:'Brake Check',engine_service:'Engine Service',filter_change:'Filter Change',battery_check:'Battery Check',ac_service:'AC Service',general_inspection:'General Inspection'};
+    if(!data.length){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted)">No schedules. Add one above.</div>';return;}
+    el.innerHTML='<table class="dtbl"><thead><tr><th>Vehicle</th><th>Service</th><th>Interval</th><th>Last Done</th><th>Next Due</th><th>Status</th><th></th></tr></thead><tbody>'+
+      data.map(s=>{
+        const v=s.vehicle?esc(s.vehicle.registration_number)+' '+esc(s.vehicle.make):'';
+        const intv=[s.interval_km?Number(s.interval_km).toLocaleString()+' km':'',s.interval_days?s.interval_days+'d':''].filter(Boolean).join(' / ')||'-';
+        const st=s.status==='overdue'?'b-err':s.status==='upcoming'?'b-warn':'b-ok';
+        return '<tr><td style="font-weight:600">'+v+'</td><td>'+(labels[s.service_type]||s.service_type)+'</td><td>'+intv+'</td><td>'+fmt(s.last_service_date)+'</td><td>'+fmt(s.next_due_date)+'</td><td><span class="badge '+st+'">'+s.status+'</span></td><td><button class="btn-danger" onclick="deleteSchedule(\''+s.id+'\')"><i class="fa-solid fa-trash"></i></button></td></tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){el.innerHTML='<div style="color:var(--danger);padding:1rem">Failed: '+esc(e.message)+'</div>';}
+}
+async function saveSchedule(){
+  const btn=document.getElementById('schSaveBtn');
+  const vid=document.getElementById('sch-vehicle').value;
+  if(!vid){toast('Select a vehicle.',false);return;}
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>';
+  try{
+    await api('/maintenance/schedules',{method:'POST',body:JSON.stringify({vehicle_id:vid,service_type:document.getElementById('sch-type').value,interval_km:document.getElementById('sch-km').value||null,interval_days:document.getElementById('sch-days').value||null,last_service_date:document.getElementById('sch-last-date').value||null,last_service_km:document.getElementById('sch-last-km').value||null})});
+    toast('Schedule saved!');toggleAddForm();tabLoaded.schedules=false;loadSchedules();
+  }catch(e){toast(e.message,false);}
+  finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Save';}
+}
+async function deleteSchedule(id){if(!confirm('Delete schedule?'))return;try{await api('/maintenance/schedules/'+id,{method:'DELETE'});toast('Deleted.');tabLoaded.schedules=false;loadSchedules();}catch(e){toast(e.message,false);}}
+
+// HISTORY
+async function loadHistory(){
+  const el=document.getElementById('historyBody');
+  el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+  try{
+    const vid=document.getElementById('histVehicleFilter')?.value||'';
+    const data=await api('/maintenance/history'+(vid?'?vehicle_id='+vid:''));
+    if(!data.length){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted)">No completed service records yet.</div>';return;}
+    el.innerHTML='<table class="dtbl"><thead><tr><th>Vehicle</th><th>Title</th><th>Type</th><th>Completed</th><th>Mechanic</th><th>Cost</th><th>Invoice</th></tr></thead><tbody>'+
+      data.map(o=>{
+        const v=o.vehicle?esc(o.vehicle.registration_number)+' '+esc(o.vehicle.make):'';
+        const invCell=o.invoice_number
+          ?'<td><div style="font-size:.72rem;color:var(--success);font-weight:600;margin-bottom:3px"><i class="fa-solid fa-file-invoice-dollar"></i> '+esc(o.invoice_number)+'</div><button class="btn-sm" style="font-size:.7rem;background:#F5F3FF;color:#7C3AED;border:1.5px solid #DDD6FE" onclick="openInvoiceModal(\''+o.id+'\')" >PDF</button></td>'
+          :'<td><button class="btn-sm" style="font-size:.7rem;background:#F5F3FF;color:#7C3AED;border:1.5px solid #DDD6FE" onclick="openInvoiceModal(\''+o.id+'\')" ><i class="fa-solid fa-plus"></i> Add</button></td>';
+        return '<tr><td style="font-weight:600">'+v+'</td><td>'+esc(o.title)+'</td><td><span class="badge '+(o.order_type==='proactive'?'b-blue':'b-gray')+'">'+o.order_type+'</span></td><td>'+fmt(o.completed_date)+'</td><td>'+esc(o.mechanic_name||'-')+'</td><td>'+fmtMoney(o.actual_cost)+'</td>'+invCell+'</tr>';
+      }).join('')+'</tbody></table>';
+  }catch(e){el.innerHTML='<div style="color:var(--danger);padding:1rem">Failed to load history.</div>';}
+}
+
+// FLEET HEALTH / COMPONENTS
+async function loadComponents(){
+  const el=document.getElementById('healthBody');
+  el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+  try{
+    const vid=document.getElementById('healthVehicleFilter')?.value||'';
+    const data=vid?await api('/maintenance/components/'+vid):await api('/maintenance/components');
+    if(!data.length){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted)">No component data yet. Use the Update Component button to add health data.</div>';return;}
+    const byV={};
+    data.forEach(c=>{if(!byV[c.vehicle_id])byV[c.vehicle_id]={label:c.vehicle?c.vehicle.registration_number+' - '+c.vehicle.make+' '+c.vehicle.model:c.vehicle_id,comps:[]};byV[c.vehicle_id].comps.push(c);});
+    el.innerHTML=Object.values(byV).map(veh=>'<div class="panel" style="margin-bottom:1.25rem"><div class="ph" style="margin-bottom:1rem"><div class="pt"><i class="fa-solid fa-truck-front" style="color:var(--accent)"></i> '+esc(veh.label)+'</div><span class="badge b-gray">'+veh.comps.length+' components</span></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem">'+
+      veh.comps.map(c=>'<div style="background:#F8FAFC;border-radius:var(--radius-md);padding:1rem;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:.5rem"><span style="font-weight:600;font-size:.88rem">'+esc(c.component_name)+'</span><span style="font-weight:700;font-size:.85rem;color:'+healthColor(c.health_pct)+'">'+c.health_pct+'%</span></div><div class="hbar"><div class="hfill" style="width:'+c.health_pct+'%;background:'+healthColor(c.health_pct)+'"></div></div>'+(c.last_replaced?'<div style="font-size:.73rem;color:var(--text-muted);margin-top:.4rem">Replaced: '+fmt(c.last_replaced)+'</div>':'')+'</div>').join('')+
+      '</div></div>').join('');
+  }catch(e){el.innerHTML='<div style="color:var(--danger);padding:1rem">Failed.</div>';}
+}
+async function saveComponent(){
+  const btn=document.getElementById('cmpSaveBtn');
+  const vid=document.getElementById('cmp-vehicle').value,name=document.getElementById('cmp-name').value,hp=document.getElementById('cmp-health').value;
+  if(!vid){toast('Select a vehicle.',false);return;}if(!hp&&hp!=='0'){toast('Enter health %.',false);return;}
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>';
+  try{await api('/maintenance/components/'+vid,{method:'POST',body:JSON.stringify({component_name:name,health_pct:parseInt(hp,10),last_replaced:document.getElementById('cmp-date').value||null,notes:document.getElementById('cmp-notes').value||null})});toast('Component updated!');closeModal('comp');tabLoaded.health=false;if(document.getElementById('pane-health').classList.contains('active'))loadComponents();}
+  catch(e){toast(e.message,false);}finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Save';}
+}
+
+// COMPLIANCE
+function compLabel(t){const m={pollution_cert:'PUC Cert',fitness_cert:'Fitness Cert',national_permit:'National Permit',state_permit:'State Permit',road_tax:'Road Tax',goods_permit:'Goods Permit'};return m[t]||t;}
+async function loadCompliance(){
+  const el=document.getElementById('complianceBody');
+  try{
+    const data=await api('/maintenance/compliance');
+    const valid=data.filter(r=>r.comp_status==='valid').length,exp=data.filter(r=>r.comp_status==='expiring_soon').length,xp=data.filter(r=>r.comp_status==='expired').length;
+    document.getElementById('complianceKpi').innerHTML='<div class="kpi-card"><div class="kpi-icon ic-g"><i class="fa-solid fa-circle-check"></i></div><span class="kpi-val">'+valid+'</span><span class="kpi-lbl">Valid</span></div><div class="kpi-card"><div class="kpi-icon ic-o"><i class="fa-solid fa-triangle-exclamation"></i></div><span class="kpi-val">'+exp+'</span><span class="kpi-lbl">Expiring Soon (30d)</span></div><div class="kpi-card"><div class="kpi-icon ic-r"><i class="fa-solid fa-ban"></i></div><span class="kpi-val">'+xp+'</span><span class="kpi-lbl">Expired</span></div>';
+    if(!data.length){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted)">No compliance records. Add PUC, fitness certs etc. using the button above.</div>';return;}
+    el.innerHTML='<table class="dtbl"><thead><tr><th>Vehicle</th><th>Type</th><th>Issued</th><th>Expiry</th><th>Authority</th><th>Status</th><th></th></tr></thead><tbody>'+
+      data.map(r=>{const v=r.vehicle?esc(r.vehicle.registration_number):'';const vs=r.comp_status==='valid'?'b-ok':r.comp_status==='expiring_soon'?'b-warn':'b-err';const d=daysUntil(r.expiry_date);const dl=d!=null?(d<0?Math.abs(d)+'d ago':'in '+d+'d'):'';return '<tr><td style="font-weight:600">'+v+'</td><td>'+compLabel(r.record_type)+'</td><td>'+fmt(r.issued_date)+'</td><td>'+fmt(r.expiry_date)+' <small style="color:var(--text-muted)">'+dl+'</small></td><td>'+esc(r.authority||'-')+'</td><td><span class="badge '+vs+'">'+r.comp_status+'</span></td><td><button class="btn-danger" onclick="deleteCompliance(\''+r.id+'\')"><i class="fa-solid fa-trash"></i></button></td></tr>';}).join('')+'</tbody></table>';
+  }catch(e){el.innerHTML='<div style="color:var(--danger);padding:1rem">Failed.</div>';}
+}
+async function saveCompliance(){
+  const btn=document.getElementById('compSaveBtn');
+  const vid=document.getElementById('comp-vehicle').value,exp=document.getElementById('comp-expiry').value;
+  if(!vid||!exp){toast('Vehicle and expiry date required.',false);return;}
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+  try{await api('/maintenance/compliance',{method:'POST',body:JSON.stringify({vehicle_id:vid,record_type:document.getElementById('comp-type').value,issued_date:document.getElementById('comp-issued').value||null,expiry_date:exp,authority:document.getElementById('comp-authority').value||null})});toast('Record added!');closeModal('compliance');tabLoaded.compliance=false;loadCompliance();}
+  catch(e){toast(e.message,false);}finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Save Record';}
+}
+async function deleteCompliance(id){if(!confirm('Delete record?'))return;try{await api('/maintenance/compliance/'+id,{method:'DELETE'});toast('Deleted.');tabLoaded.compliance=false;loadCompliance();}catch(e){toast(e.message,false);}}
+
+// VENDORS
+const specL={general:'General Repairs',tyres:'Tyres',engine:'Engine',electrical:'Electrical',body:'Body Work',ac:'AC / Cooling',authorized_dealer:'Auth. Dealer'};
+async function loadVendors(){
+  const el=document.getElementById('vendorGrid');
+  try{
+    const data=await api('/maintenance/vendors');
+    if(!data.length){el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted);grid-column:1/-1">No vendors registered. Add your first service centre above.</div>';return;}
+    el.innerHTML=data.map(v=>'<div class="v-card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem"><div class="v-name">'+esc(v.name)+'</div><button class="btn-danger" style="padding:4px 10px;font-size:.72rem" onclick="deleteVendor(\''+v.id+'\')"><i class="fa-solid fa-trash"></i></button></div><div class="v-meta">'+(v.contact_person?'<span><i class="fa-solid fa-user"></i>'+esc(v.contact_person)+'</span>':'')+(v.phone?'<span><i class="fa-solid fa-phone"></i>'+esc(v.phone)+'</span>':'')+(v.city?'<span><i class="fa-solid fa-location-dot"></i>'+esc(v.city)+'</span>':'')+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span class="badge b-blue">'+(specL[v.specialization]||v.specialization)+'</span><div class="stars">'+'★'.repeat(Math.round(v.rating||0))+'☆'.repeat(5-Math.round(v.rating||0))+'</div></div></div>').join('');
+  }catch(e){el.innerHTML='<div style="color:var(--danger);padding:2rem">Failed.</div>';}
+}
+async function saveVendor(){
+  const btn=document.getElementById('vendorSaveBtn');
+  const name=document.getElementById('v-name').value.trim();
+  if(!name){toast('Vendor name required.',false);return;}
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i>';
+  try{await api('/maintenance/vendors',{method:'POST',body:JSON.stringify({name,contact_person:document.getElementById('v-contact').value||null,phone:document.getElementById('v-phone').value||null,city:document.getElementById('v-city').value||null,address:document.getElementById('v-address').value||null,specialization:document.getElementById('v-spec').value})});toast('Vendor added!');closeModal('vendor');tabLoaded.vendors=false;loadVendors();}
+  catch(e){toast(e.message,false);}finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Add Vendor';}
+}
+async function deleteVendor(id){if(!confirm('Remove vendor?'))return;try{await api('/maintenance/vendors/'+id,{method:'DELETE'});toast('Removed.');tabLoaded.vendors=false;loadVendors();}catch(e){toast(e.message,false);}}
+
+// ANALYTICS
+let aChartInst=null,tChartInst=null;
+async function loadAnalytics(){
+  try{
+    const[costData,dt,orders]=await Promise.all([api('/maintenance/cost-chart'),api('/maintenance/downtime'),api('/maintenance')]);
+    document.getElementById('analyticsKpi').innerHTML='<div class="kpi-card"><div class="kpi-icon ic-b"><i class="fa-solid fa-check-double"></i></div><span class="kpi-val">'+dt.totalCompletedJobs+'</span><span class="kpi-lbl">Completed Jobs</span></div><div class="kpi-card"><div class="kpi-icon ic-g"><i class="fa-solid fa-clock"></i></div><span class="kpi-val">'+dt.avgDowntimeHours+' <small style="font-size:1rem">hrs</small></span><span class="kpi-lbl">Avg Downtime / Job</span></div><div class="kpi-card"><div class="kpi-icon ic-r"><i class="fa-solid fa-tools"></i></div><span class="kpi-val">'+dt.currentDownCount+'</span><span class="kpi-lbl">Vehicles Down Now</span></div>';
+    if(aChartInst)aChartInst.destroy();
+    aChartInst=new ApexCharts(document.getElementById('analyticsChart'),{series:[{name:'Cost',data:costData.map(d=>d.cost)}],chart:{type:'bar',height:200,toolbar:{show:false},fontFamily:'Inter'},colors:['#2563EB'],dataLabels:{enabled:false},xaxis:{categories:costData.map(d=>d.month),axisBorder:{show:false},labels:{style:{colors:'#64748B'}}},yaxis:{show:false},grid:{show:false},tooltip:{y:{formatter:v=>String.fromCharCode(8377)+(v*1000).toLocaleString('en-IN')}}});
+    aChartInst.render();
+    const corr=orders.filter(o=>o.order_type==='corrective').length,prot=orders.filter(o=>o.order_type==='proactive').length;
+    if(tChartInst)tChartInst.destroy();
+    tChartInst=new ApexCharts(document.getElementById('typeChart'),{series:[corr,prot],chart:{type:'donut',height:200,toolbar:{show:false},fontFamily:'Inter'},labels:['Corrective','Proactive'],colors:['#EF4444','#10B981'],legend:{position:'bottom'},dataLabels:{enabled:true},plotOptions:{pie:{donut:{size:'60%'}}}});
+    tChartInst.render();
+  }catch(e){console.error('Analytics error:',e);}
+}
+
+// MODALS
+const overlayMap={wo:'woOverlay',status:'statusOverlay',compliance:'complianceOverlay',vendor:'vendorOverlay',comp:'compOverlay',invoice:'invoiceOverlay'};
+function openModal(n){document.getElementById(overlayMap[n]).classList.add('show');}
+function closeModal(n){document.getElementById(overlayMap[n]).classList.remove('show');}
+
+// ── INVOICE FUNCTIONS ─────────────────────────────────────────────────────────
+let _curInvOrder=null;
+async function openInvoiceModal(orderId){
+  try{
+    const o=await api('/maintenance/'+orderId);
+    _curInvOrder=o;
+    document.getElementById('inv-orderId').value=orderId;
+    const v=o.vehicle||{};
+    document.getElementById('invOrderInfo').innerHTML=
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem">'+
+      '<div><div style="font-size:.7rem;color:var(--text-muted);margin-bottom:2px">VEHICLE</div><div style="font-weight:600;font-size:.88rem">'+esc(v.registration_number||'—')+'</div><div style="font-size:.78rem;color:var(--text-muted)">'+esc(v.make||'')+' '+esc(v.model||'')+'</div></div>'+
+      '<div><div style="font-size:.7rem;color:var(--text-muted);margin-bottom:2px">SERVICE</div><div style="font-weight:600;font-size:.88rem">'+esc(o.title)+'</div></div>'+
+      '<div><div style="font-size:.7rem;color:var(--text-muted);margin-bottom:2px">MECHANIC</div><div style="font-weight:600;font-size:.88rem">'+esc(o.mechanic_name||'—')+'</div></div>'+
+      '<div><div style="font-size:.7rem;color:var(--text-muted);margin-bottom:2px">STATUS</div><div style="font-weight:600;font-size:.88rem">'+esc(o.status)+'</div></div>'+
+      '</div>';
+    document.getElementById('inv-number').value=o.invoice_number||('INV-'+new Date().getFullYear()+'-'+Date.now().toString().slice(-5));
+    document.getElementById('inv-total').value=o.invoice_total||'';
+    document.getElementById('inv-actual').value=o.actual_cost||'';
+    document.getElementById('inv-parts').value='';
+    document.getElementById('inv-notes').value=o.invoice_notes||'';
+    openModal('invoice');
+  }catch(e){toast('Could not load order: '+e.message,false);}
+}
+async function saveInvoice(){
+  const btn=document.getElementById('invSaveBtn');
+  const orderId=document.getElementById('inv-orderId').value;
+  if(!orderId)return;
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+  try{
+    const res=await api('/maintenance/'+orderId+'/invoice',{method:'PATCH',body:JSON.stringify({
+      invoice_number:document.getElementById('inv-number').value||null,
+      invoice_total:document.getElementById('inv-total').value||null,
+      invoice_notes:document.getElementById('inv-notes').value||null,
+      actual_cost:document.getElementById('inv-actual').value||null
+    })});
+    _curInvOrder=res.order;
+    toast('Invoice saved!');
+    tabLoaded.kanban=false;tabLoaded.history=false;
+    if(document.getElementById('pane-kanban').classList.contains('active'))loadKanban();
+    if(document.getElementById('pane-history').classList.contains('active'))loadHistory();
+  }catch(e){toast(e.message,false);}
+  finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Save';}
+}
+function downloadInvoicePDF(){
+  const o=_curInvOrder;
+  if(!o){toast('Open an order first.',false);return;}
+  if(!window.jspdf){toast('PDF library not loaded.',false);return;}
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const v=o.vehicle||{};
+  const invNum=document.getElementById('inv-number').value||o.invoice_number||('INV-'+Date.now());
+  const invTotal=document.getElementById('inv-total').value||o.invoice_total||'';
+  const actual=document.getElementById('inv-actual').value||o.actual_cost||'';
+  const parts=document.getElementById('inv-parts').value||'';
+  const notes=document.getElementById('inv-notes').value||o.invoice_notes||'';
+  const today=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  // Header
+  doc.setFillColor(37,99,235);doc.rect(0,0,210,38,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(22);doc.setFont('helvetica','bold');
+  doc.text('TRUFLEET',15,18);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text('Fleet Management System',15,26);
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('SERVICE INVOICE',210-15,18,{align:'right'});
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(invNum,210-15,26,{align:'right'});
+  doc.text('Date: '+today,210-15,33,{align:'right'});
+  // Vehicle box
+  doc.setTextColor(15,23,42);
+  doc.setFillColor(241,245,249);doc.rect(12,45,90,36,'F');
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('VEHICLE DETAILS',15,52);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Reg: '+(v.registration_number||'—'),15,60);
+  doc.text('Make/Model: '+(v.make||'')+' '+(v.model||''),15,68);
+  doc.text('VIN: '+(v.vin||'—'),15,76);
+  // Service box
+  doc.setFillColor(239,246,255);doc.rect(108,45,90,36,'F');
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('SERVICE DETAILS',111,52);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Service: '+(o.title||''),111,60,{maxWidth:85});
+  doc.text('Mechanic: '+(o.mechanic_name||'—'),111,68);
+  doc.text('Completed: '+(o.completed_date?new Date(o.completed_date).toLocaleDateString('en-IN'):'—'),111,76);
+  // Table header
+  doc.setDrawColor(226,232,240);doc.line(12,88,198,88);
+  doc.setFillColor(37,99,235);doc.rect(12,92,186,8,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('DESCRIPTION',15,97.5);
+  doc.text('AMOUNT',198,97.5,{align:'right'});
+  // Rows
+  doc.setTextColor(15,23,42);doc.setFont('helvetica','normal');
+  let y=110;
+  const rows=[];
+  if(actual)rows.push(['Labour & Service: '+(o.title||''),'Rs.'+Number(actual).toLocaleString('en-IN')]);
+  if(parts) rows.push(['Spare Parts / Components','Rs.'+Number(parts).toLocaleString('en-IN')]);
+  if(o.description)rows.push(['Remarks: '+o.description.substring(0,80),'']);
+  if(notes)rows.push(['Notes: '+notes.substring(0,80),'']);
+  if(!rows.length)rows.push(['Service: '+(o.title||''),actual?'Rs.'+Number(actual).toLocaleString('en-IN'):'—']);
+  rows.forEach(([d,a],i)=>{
+    if(i%2===0){doc.setFillColor(248,250,252);doc.rect(12,y-5,186,8,'F');}
+    doc.text(d,15,y,{maxWidth:155});
+    if(a)doc.text(a,198,y,{align:'right'});
+    y+=10;
+  });
+  // Total
+  y=Math.max(y+8,155);
+  doc.setFillColor(239,246,255);doc.rect(118,y-6,80,14,'F');
+  doc.setFontSize(10);doc.setFont('helvetica','bold');
+  doc.text('TOTAL:',121,y+2);
+  doc.setTextColor(37,99,235);
+  const displayTotal=invTotal?Number(invTotal).toLocaleString('en-IN'):actual?Number(actual).toLocaleString('en-IN'):'—';
+  doc.text('Rs.'+displayTotal,198,y+2,{align:'right'});
+  // Footer
+  doc.setTextColor(100,116,139);doc.setFontSize(7.5);doc.setFont('helvetica','normal');
+  doc.text('Generated by Trufleet Fleet Management System  ·  '+today,105,285,{align:'center'});
+  doc.save('Invoice_'+invNum+'.pdf');
+  toast('Invoice PDF downloaded!');
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+let calYear, calMonth, calEvents=[];
+(function initCalDate(){ const d=new Date(); calYear=d.getFullYear(); calMonth=d.getMonth(); })();
+
+function calNav(dir){ calMonth+=dir; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} loadCalendar(); }
+function calToday(){ const d=new Date(); calYear=d.getFullYear(); calMonth=d.getMonth(); loadCalendar(); }
+
+async function loadCalendar(){
+  const label=document.getElementById('calMonthLabel');
+  const grid=document.getElementById('calGrid');
+  const monthStr=calYear+'-'+String(calMonth+1).padStart(2,'0');
+  label.textContent=new Date(calYear,calMonth).toLocaleString('en-US',{month:'long',year:'numeric'});
+  grid.innerHTML='<div style="text-align:center;padding:3rem;color:var(--text-muted);grid-column:1/-1"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+  document.getElementById('calDrawer').style.display='none';
+  try{
+    calEvents=await api('/maintenance/calendar?month='+monthStr);
+    renderCalendar();
+  }catch(e){grid.innerHTML='<div style="color:var(--danger);padding:2rem;text-align:center">'+esc(e.message)+'</div>';}
+}
+
+function renderCalendar(){
+  const grid=document.getElementById('calGrid');
+  const today=new Date(); const todayStr=today.toISOString().split('T')[0];
+  const first=new Date(calYear,calMonth,1);
+  const last=new Date(calYear,calMonth+1,0);
+  const startDay=first.getDay(); // 0=Sun
+  const daysInMonth=last.getDate();
+  // Previous month pad
+  const prevLast=new Date(calYear,calMonth,0).getDate();
+  // Group events by date
+  const byDate={};
+  calEvents.forEach(ev=>{if(ev.date){const d=ev.date.split('T')[0];if(!byDate[d])byDate[d]=[];byDate[d].push(ev);}});
+
+  let html='<div class="cal-hdr"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div class="cal-body">';
+  // Previous month cells
+  for(let i=startDay-1;i>=0;i--){
+    const d=prevLast-i;
+    html+='<div class="cal-cell other"><div class="cal-day">'+d+'</div></div>';
+  }
+  // Current month cells
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday=dateStr===todayStr;
+    const evts=byDate[dateStr]||[];
+    const count=evts.length;
+    // Group by vehicle for the count badge
+    const vehicleIds=new Set(evts.map(e=>e.vehicle_id));
+    const vCount=vehicleIds.size;
+    html+='<div class="cal-cell'+(isToday?' today':'')+'" onclick="openCalDay(\''+dateStr+'\')">';
+    html+='<div class="cal-day">'+(isToday?'<span class="cd-today">'+d+'</span>':''+d)+(vCount?'<span class="cal-cnt" title="'+vCount+' vehicle'+(vCount>1?'s':'')+'">'+vCount+'</span>':'')+'</div>';
+    if(evts.length){
+      html+='<div class="cal-dots">';
+      const show=evts.slice(0,3);
+      show.forEach(ev=>{
+        html+='<div class="cal-ev ev-'+ev.type+'"><i class="fa-solid '+ev.icon+'" style="font-size:.6rem"></i> '+esc(ev.vehicle?.registration_number||'')+' </div>';
+      });
+      if(evts.length>3) html+='<div style="font-size:.65rem;color:var(--text-muted);padding-left:4px">+'+(evts.length-3)+' more</div>';
+      html+='</div>';
+    }
+    html+='</div>';
+  }
+  // Next month pad
+  const totalCells=startDay+daysInMonth;
+  const rem=totalCells%7===0?0:7-totalCells%7;
+  for(let i=1;i<=rem;i++){
+    html+='<div class="cal-cell other"><div class="cal-day">'+i+'</div></div>';
+  }
+  html+='</div>';
+  grid.innerHTML=html;
+}
+
+function openCalDay(dateStr){
+  const evts=(calEvents||[]).filter(e=>e.date&&e.date.split('T')[0]===dateStr);
+  const drawer=document.getElementById('calDrawer');
+  const body=document.getElementById('calDrawerBody');
+  const title=document.getElementById('calDrawerTitle');
+
+  const d=new Date(dateStr+'T00:00:00');
+  title.textContent=d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Highlight selected cell
+  document.querySelectorAll('.cal-cell.selected').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.cal-cell').forEach(c=>{if(c.getAttribute('onclick')&&c.getAttribute('onclick').includes(dateStr))c.classList.add('selected');});
+
+  if(!evts.length){
+    body.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-calendar-xmark" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:.35"></i><div style="font-weight:600">No events on this date</div><div style="font-size:.85rem;margin-top:4px">No renewals, services, or work orders are scheduled.</div></div>';
+    drawer.style.display='block';
+    drawer.scrollIntoView({behavior:'smooth',block:'nearest'});
+    return;
+  }
+
+  // Group by vehicle
+  const byVehicle={};
+  evts.forEach(ev=>{
+    const vid=ev.vehicle_id||'unknown';
+    if(!byVehicle[vid])byVehicle[vid]={vehicle:ev.vehicle,events:[]};
+    byVehicle[vid].events.push(ev);
+  });
+
+  const typeBadge={schedule:{cls:'ic-sched',lbl:'Preventive Service',badge:'b-blue'},compliance:{cls:'ic-comp',lbl:'Compliance Renewal',badge:'b-warn'},work_order:{cls:'ic-wo',lbl:'Work Order',badge:'b-err'}};
+
+  // Summary bar
+  const schedCount=evts.filter(e=>e.type==='schedule').length;
+  const compCount=evts.filter(e=>e.type==='compliance').length;
+  const woCount=evts.filter(e=>e.type==='work_order').length;
+  let summary='<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">';
+  summary+='<div style="background:#EFF6FF;border-radius:10px;padding:10px 16px;flex:1;min-width:120px;text-align:center"><div style="font-family:Outfit;font-weight:700;font-size:1.3rem;color:#2563EB">'+schedCount+'</div><div style="font-size:.75rem;font-weight:600;color:#64748B">Services</div></div>';
+  summary+='<div style="background:#FFFBEB;border-radius:10px;padding:10px 16px;flex:1;min-width:120px;text-align:center"><div style="font-family:Outfit;font-weight:700;font-size:1.3rem;color:#D97706">'+compCount+'</div><div style="font-size:.75rem;font-weight:600;color:#64748B">Renewals</div></div>';
+  summary+='<div style="background:#FEF2F2;border-radius:10px;padding:10px 16px;flex:1;min-width:120px;text-align:center"><div style="font-family:Outfit;font-weight:700;font-size:1.3rem;color:#DC2626">'+woCount+'</div><div style="font-size:.75rem;font-weight:600;color:#64748B">Work Orders</div></div>';
+  summary+='<div style="background:#F8FAFC;border-radius:10px;padding:10px 16px;flex:1;min-width:120px;text-align:center"><div style="font-family:Outfit;font-weight:700;font-size:1.3rem;color:var(--primary)">'+Object.keys(byVehicle).length+'</div><div style="font-size:.75rem;font-weight:600;color:#64748B">Vehicles</div></div>';
+  summary+='</div>';
+
+  // Vehicle sections
+  let cards='';
+  Object.values(byVehicle).forEach(({vehicle,events})=>{
+    const vLabel=vehicle?(esc(vehicle.registration_number)+' \u2014 '+esc(vehicle.make)+' '+esc(vehicle.model)):'Unknown Vehicle';
+    cards+='<div style="background:#F8FAFC;border-radius:var(--radius-md);padding:1rem;margin-bottom:.75rem;border:1px solid var(--border)">';
+    cards+='<div style="font-weight:700;font-size:.9rem;color:var(--primary);margin-bottom:.75rem;display:flex;align-items:center;gap:8px"><i class="fa-solid fa-truck-front" style="color:var(--accent)"></i> '+vLabel+' <span class="badge b-gray" style="font-size:.68rem">'+events.length+' event'+(events.length>1?'s':'')+'</span></div>';
+    events.forEach(ev=>{
+      const tb=typeBadge[ev.type]||typeBadge.schedule;
+      cards+='<div class="cal-detail-card"><div class="cal-detail-ico '+tb.cls+'"><i class="fa-solid '+ev.icon+'"></i></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:3px"><span style="font-weight:600;font-size:.88rem">'+esc(ev.label)+'</span><span class="badge '+tb.badge+'" style="font-size:.65rem">'+tb.lbl+'</span>'+(ev.priority?'<span class="badge '+(ev.priority==='high'?'b-err':ev.priority==='medium'?'b-warn':'b-ok')+'" style="font-size:.65rem">'+ev.priority+'</span>':'')+(ev.status?'<span class="badge b-gray" style="font-size:.65rem">'+ev.status+'</span>':'')+'</div></div></div>';
+    });
+    cards+='</div>';
+  });
+
+  body.innerHTML=summary+cards;
+  drawer.style.display='block';
+  drawer.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// INIT
+(async function(){await loadVehicles();loadOverview();tabLoaded['overview']=true;})();
+</script>
+</body>
+</html>

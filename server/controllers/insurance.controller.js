@@ -1,0 +1,257 @@
+const supabase = require('../config/supabaseClient');
+
+// ─── Supabase Storage helper ────────────────────────────────────────────────
+const BUCKET = 'fleet-documents';
+
+async function ensureBucket() {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets || buckets.find(b => b.name === BUCKET)) return;
+    await supabase.storage.createBucket(BUCKET, { public: true });
+}
+
+async function uploadToStorage(remotePath, buffer, mimetype) {
+    await ensureBucket();
+    const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(remotePath, buffer, { contentType: mimetype, upsert: true });
+    if (error) throw new Error(`Storage upload failed: ${error.message}`);
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(remotePath);
+    return data.publicUrl;
+}
+
+// GET all policies (with vehicle data joined)
+exports.getAllPolicies = async (req, res) => {
+    const { data, error } = await supabase
+        .from('insurance_policies')
+        .select('*, vehicle:vehicles(make, model, vin, registration_number, status)')
+        .order('expiry_date', { ascending: true });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+};
+
+// GET insurance KPI stats
+exports.getInsuranceStats = async (req, res) => {
+    const today     = new Date();
+    const in7Days   = new Date();
+    in7Days.setDate(today.getDate() + 7);
+    const todayStr    = today.toISOString().split('T')[0];
+    const in7DaysStr  = in7Days.toISOString().split('T')[0];
+
+    // 1. Total vehicles in fleet
+    const { count: totalVehicles } = await supabase
+        .from('vehicles')
+        .select('*', { count: 'exact', head: true });
+
+    // 2. Active policies (expiry >= today)
+    const { count: activePolicies } = await supabase
+        .from('insurance_policies')
+        .select('*', { count: 'exact', head: true })
+        .gte('expiry_date', todayStr);
+
+    // 3. Expired policies (expiry < today)
+    const { count: expiredCount } = await supabase
+        .from('insurance_policies')
+        .select('*', { count: 'exact', head: true })
+        .lt('expiry_date', todayStr);
+
+    // 4. Vehicles with NO insurance record at all (truly uninsured)
+    //    Fetch all insured vehicle_ids, then subtract from total
+    const { data: insuredRows } = await supabase
+        .from('insurance_policies')
+        .select('vehicle_id');
+    const uniqueInsuredCount = new Set((insuredRows || []).map(r => r.vehicle_id)).size;
+    const uninsuredVehicles  = Math.max(0, (totalVehicles || 0) - uniqueInsuredCount);
+
+    // 5. Expiring within next 7 days (active but critical)
+    const { count: expiringIn7 } = await supabase
+        .from('insurance_policies')
+        .select('*', { count: 'exact', head: true })
+        .gte('expiry_date', todayStr)
+        .lte('expiry_date', in7DaysStr);
+
+    // coveragePercent = vehicles that have at least one active policy / total vehicles
+    const coveragePct = (totalVehicles || 0) > 0
+        ? (((activePolicies || 0) / totalVehicles) * 100).toFixed(1)
+        : '0.0';
+
+    res.json({
+        totalVehicles:      totalVehicles      || 0,
+        coveragePercent:    coveragePct,
+        // Expired policies + vehicles with zero policy record
+        expiredOrUninsured: (expiredCount || 0) + uninsuredVehicles,
+        expiringIn7Days:    expiringIn7        || 0,
+        activePolicies:     activePolicies     || 0
+    });
+};
+
+// GET urgent policies (expired + expiring within 7 days)
+exports.getUrgentPolicies = async (req, res) => {
+    const today = new Date();
+    const in7Days = new Date();
+    in7Days.setDate(today.getDate() + 7);
+
+    const todayStr = today.toISOString().split('T')[0];
+    const in7DaysStr = in7Days.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+        .from('insurance_policies')
+        .select('*, vehicle:vehicles(make, model, registration_number, vin)')
+        .lte('expiry_date', in7DaysStr)
+        .order('expiry_date', { ascending: true });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    // Add days remaining and status
+    const enriched = data.map(p => {
+        const expiry = new Date(p.expiry_date);
+        const diffMs = expiry - today;
+        const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        return { ...p, daysLeft, isExpired: daysLeft < 0 };
+    });
+
+    res.json(enriched);
+};
+
+// GET upcoming renewals (next 30 days) for dashboard table
+exports.getUpcomingRenewals = async (req, res) => {
+    const today = new Date();
+    const in30Days = new Date();
+    in30Days.setDate(today.getDate() + 30);
+
+    const todayStr = today.toISOString().split('T')[0];
+    const in30DaysStr = in30Days.toISOString().split('T')[0];
+
+    const limit = parseInt(req.query.limit) || 10;
+
+    const { data, error } = await supabase
+        .from('insurance_policies')
+        .select('*, vehicle:vehicles(make, model, registration_number, vin)')
+        .lte('expiry_date', in30DaysStr)
+        .order('expiry_date', { ascending: true })
+        .limit(limit);
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const today2 = new Date();
+    const enriched = data.map(p => {
+        const expiry = new Date(p.expiry_date);
+        const diffMs = expiry - today2;
+        const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        return { ...p, daysLeft, isExpired: daysLeft < 0 };
+    });
+
+    res.json(enriched);
+};
+
+// POST add policy
+exports.addPolicy = async (req, res) => {
+    try {
+        const { vehicle_id, provider, policy_number, start_date, expiry_date } = req.body;
+
+        if (!vehicle_id || !provider || !policy_number || !expiry_date) {
+            return res.status(400).json({ error: 'vehicle_id, provider, policy_number, and expiry_date are required.' });
+        }
+
+        let document_url = null;
+        const policyFile = req.files?.policy_document?.[0] || req.file;
+        if (policyFile) {
+            const ext = (policyFile.originalname.split('.').pop() || 'pdf').toLowerCase();
+            document_url = await uploadToStorage(
+                `insurance/${Date.now()}_${vehicle_id}.${ext}`,
+                policyFile.buffer,
+                policyFile.mimetype
+            );
+        }
+
+        const { data, error } = await supabase
+            .from('insurance_policies')
+            .insert([{ vehicle_id, provider, policy_number, start_date, expiry_date, document_url }])
+            .select();
+
+        if (error) return res.status(500).json({ error: error.message });
+        res.status(201).json({ message: 'Insurance policy added.', policy: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message || 'Failed to add policy.' });
+    }
+};
+
+// PUT update / renew policy
+exports.updatePolicy = async (req, res) => {
+    try {
+        const { policyId } = req.params;
+        const updates = req.body;
+        delete updates.id;
+
+        const policyFile = req.files?.policy_document?.[0] || req.file;
+        if (policyFile) {
+            const ext = (policyFile.originalname.split('.').pop() || 'pdf').toLowerCase();
+            updates.document_url = await uploadToStorage(
+                `insurance/${Date.now()}_${policyId}.${ext}`,
+                policyFile.buffer,
+                policyFile.mimetype
+            );
+        }
+
+        const { data, error } = await supabase
+            .from('insurance_policies')
+            .update(updates)
+            .eq('id', policyId)
+            .select();
+
+        if (error) return res.status(500).json({ error: error.message });
+        if (!data || data.length === 0) return res.status(404).json({ error: 'Policy not found.' });
+
+        res.json({ message: 'Policy updated successfully.', policy: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message || 'Failed to update policy.' });
+    }
+};
+
+// DELETE policy
+exports.deletePolicy = async (req, res) => {
+    const { policyId } = req.params;
+    const { error } = await supabase
+        .from('insurance_policies')
+        .delete()
+        .eq('id', policyId);
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ message: 'Policy deleted.' });
+};
+
+// GET fleet insurance view — ALL vehicles with their latest insurance policy and risk status
+// This is the vehicle-centric view: every fleet asset appears, insured or not.
+exports.getFleetInsuranceView = async (req, res) => {
+    const { data, error } = await supabase
+        .from('vehicles')
+        .select('id, make, model, registration_number, vin, year, status, created_at, insurance_policies(id, provider, policy_number, start_date, expiry_date, document_url)')
+        .order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const today = new Date();
+    const enriched = (data || []).map(v => {
+        const policies = Array.isArray(v.insurance_policies) ? v.insurance_policies : [];
+        // Sort policies by expiry desc so index 0 = most recently-expiring = effective active policy
+        const sorted = policies.slice().sort((a, b) => new Date(b.expiry_date) - new Date(a.expiry_date));
+        // Prefer the latest active (future) policy; fall back to latest expired
+        const activePolicy = sorted.find(p => new Date(p.expiry_date) >= today);
+        const latest = activePolicy || sorted[0] || null;
+
+        let insStatus = 'uninsured';
+        let daysLeft  = null;
+        if (latest) {
+            const expiry = new Date(latest.expiry_date);
+            daysLeft = Math.ceil((expiry - today) / 86400000);
+            insStatus = daysLeft < 0 ? 'expired' : daysLeft <= 7 ? 'critical' : daysLeft <= 30 ? 'expiring' : 'active';
+        }
+        return { ...v, latestPolicy: latest, insStatus, daysLeft, totalPolicies: policies.length };
+    });
+
+    // Sort by risk priority: uninsured → expired → critical → expiring → active
+    const riskOrder = { uninsured: 0, expired: 1, critical: 2, expiring: 3, active: 4 };
+    enriched.sort((a, b) => (riskOrder[a.insStatus] ?? 5) - (riskOrder[b.insStatus] ?? 5));
+
+    res.json(enriched);
+};

@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookSmart AI | TruFleet</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════════════════ */
+:root {
+  --sidebar-w: 260px;
+  --sidebar-collapsed: 72px;
+  --header-h: 68px;
+
+  /* Palette */
+  --bg:       #F0F2FA;
+  --surface:  #FFFFFF;
+  --border:   #E4E9F5;
+  --primary:  #0D1B3E;
+  --accent:   #4F56FF;
+  --accent-2: #7C3AED;
+  --accent-g:  linear-gradient(135deg,#4F56FF 0%,#7C3AED 100%);
+  --accent-soft: #EEEEFF;
+  --accent-mid:  rgba(79,86,255,.12);
+  --success:  #10B981;
+  --warning:  #F59E0B;
+  --danger:   #EF4444;
+  --text:     #1E2D4D;
+  --muted:    #64748B;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(79,86,255,.10),0 1px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 12px 40px rgba(79,86,255,.15),0 4px 12px rgba(0,0,0,.06);
+  --shadow-chat: 0 24px 60px rgba(13,27,62,.25),0 8px 24px rgba(79,86,255,.2);
+  --r-xl: 24px;
+  --r-lg: 16px;
+  --r-md: 12px;
+  --spring: all .4s cubic-bezier(.34,1.56,.64,1);
+  --smooth: all .28s cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;outline:none;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+button,input,select,textarea{font-family:inherit;}
+
+/* ── Layout ─────────────────────────────────────────── */
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh;transition:grid-template-columns .38s ease;}
+.app.collapsed{grid-template-columns:var(--sidebar-collapsed) 1fr;}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+aside{
+  background:var(--surface);border-right:1px solid var(--border);
+  padding:1.5rem .875rem;display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;z-index:50;
+  transition:var(--smooth);overflow:hidden;
+}
+.brand{
+  display:flex;align-items:center;gap:11px;
+  padding:.25rem .75rem 2rem;text-decoration:none;
+  overflow:hidden;white-space:nowrap;
+}
+.brand-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:var(--accent-g);display:flex;align-items:center;
+  justify-content:center;color:white;font-size:1rem;
+  box-shadow:0 4px 12px rgba(79,86,255,.35);
+}
+.brand-name{
+  font-family:'Outfit',sans-serif;font-weight:700;font-size:1.1rem;
+  color:var(--primary);transition:opacity .2s;
+}
+.app.collapsed .brand-name{opacity:0;pointer-events:none;}
+
+.nav-section-label{
+  font-size:.65rem;font-weight:700;color:#A0AECE;letter-spacing:.09em;
+  text-transform:uppercase;padding:.5rem .75rem;margin-top:.5rem;
+  white-space:nowrap;overflow:hidden;transition:opacity .2s;
+}
+.app.collapsed .nav-section-label{opacity:0;}
+.nav-item{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 14px;color:var(--muted);text-decoration:none;
+  border-radius:var(--r-md);transition:var(--smooth);
+  font-size:.875rem;font-weight:500;white-space:nowrap;overflow:hidden;
+  margin-bottom:2px;
+}
+.nav-item:hover{background:var(--accent-soft);color:var(--accent);}
+.nav-item.active{background:var(--accent-mid);color:var(--accent);}
+.nav-item i{font-size:1rem;min-width:20px;text-align:center;flex-shrink:0;}
+.nav-spacer{flex:1;}
+.toggle-btn{
+  background:transparent;border:none;cursor:pointer;
+  color:var(--muted);padding:8px;border-radius:8px;
+  font-size:1rem;transition:var(--smooth);align-self:flex-start;
+}
+.toggle-btn:hover{background:var(--accent-soft);color:var(--accent);}
+
+/* ── Main ─────────────────────────────────────────────── */
+main{overflow-y:auto;height:100vh;}
+header{
+  height:var(--header-h);
+  background:rgba(255,255,255,.88);backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(228,233,245,.7);
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;
+}
+.hdr-left{display:flex;align-items:center;gap:14px;}
+.page-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.15rem;color:var(--primary);}
+.page-sub{font-size:.73rem;color:var(--muted);margin-top:1px;}
+.ai-status-pill{
+  display:flex;align-items:center;gap:7px;
+  background:var(--accent-mid);border:1px solid rgba(79,86,255,.25);
+  padding:5px 13px;border-radius:20px;
+  font-size:.75rem;font-weight:600;color:var(--accent);
+}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--success);animation:pulse-dot 2s infinite;}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.5);}50%{box-shadow:0 0 0 5px rgba(16,185,129,0);}}
+
+.profile-chip{
+  display:flex;align-items:center;gap:9px;
+  padding:6px 13px 6px 6px;background:white;
+  border:1px solid var(--border);border-radius:30px;cursor:pointer;
+  transition:var(--smooth);
+}
+.profile-chip:hover{border-color:var(--accent);}
+.profile-img{width:30px;height:30px;border-radius:50%;object-fit:cover;}
+.pname{font-weight:600;font-size:.83rem;color:var(--primary);}
+
+/* ── Hero Banner ─────────────────────────────────────── */
+.page-body{padding:2rem;max-width:1380px;}
+.hero-banner{
+  background:var(--accent-g);
+  border-radius:var(--r-xl);padding:2rem 2.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2rem;overflow:hidden;position:relative;
+  animation:fadeUp .5s ease-out;
+}
+.hero-banner::before{
+  content:'';position:absolute;right:-60px;top:-60px;
+  width:280px;height:280px;border-radius:50%;
+  background:rgba(255,255,255,.06);pointer-events:none;
+}
+.hero-banner::after{
+  content:'';position:absolute;right:80px;bottom:-80px;
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(255,255,255,.04);pointer-events:none;
+}
+.hero-text h1{
+  font-family:'Outfit',sans-serif;font-weight:800;
+  font-size:1.65rem;color:#fff;margin-bottom:.4rem;
+}
+.hero-text p{font-size:.88rem;color:rgba(255,255,255,.75);max-width:480px;line-height:1.6;}
+.hero-badge{
+  background:rgba(255,255,255,.15);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.25);border-radius:var(--r-lg);
+  padding:1rem 1.5rem;color:white;text-align:center;flex-shrink:0;
+}
+.hero-badge .hb-num{font-family:'Outfit',sans-serif;font-size:2rem;font-weight:800;}
+.hero-badge .hb-lbl{font-size:.72rem;opacity:.8;margin-top:2px;}
+
+/* ── Main Grid ───────────────────────────────────────── */
+.main-grid{
+  display:grid;
+  grid-template-columns:1.4fr 1fr;
+  gap:2rem;
+  align-items:start;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.card{
+  background:var(--surface);border-radius:var(--r-xl);
+  border:1px solid var(--border);box-shadow:var(--shadow-sm);
+  overflow:hidden;
+}
+.card-header{
+  padding:1.5rem 1.75rem .25rem;
+  display:flex;align-items:center;gap:12px;
+}
+.card-icon{
+  width:40px;height:40px;border-radius:12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+}
+.card-header h2{
+  font-family:'Outfit',sans-serif;font-size:1.1rem;
+  font-weight:700;color:var(--primary);
+}
+.card-header p{font-size:.78rem;color:var(--muted);margin-top:1px;}
+
+/* ── Form ─────────────────────────────────────────────── */
+.form-body{padding:1.5rem 1.75rem 1.75rem;}
+.sec-label{
+  font-size:.67rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--muted);
+  margin:1.5rem 0 .875rem;
+  display:flex;align-items:center;gap:8px;
+}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.sec-label:first-child{margin-top:0;}
+
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.form-group{margin-bottom:1rem;}
+.form-group:last-child{margin-bottom:0;}
+.form-label{
+  display:block;font-size:.82rem;font-weight:600;
+  color:var(--text);margin-bottom:6px;
+}
+.form-label .req{color:var(--danger);margin-left:2px;}
+.form-control{
+  width:100%;padding:10px 13px;
+  border:1.5px solid var(--border);border-radius:10px;
+  font-size:.875rem;background:white;color:var(--text);
+  transition:var(--smooth);
+}
+.form-control:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,86,255,.1);}
+textarea.form-control{resize:vertical;min-height:76px;}
+
+/* AI-filled highlight animation */
+.ai-filled{
+  animation:ai-fill-flash .7s ease-out;
+  border-color:var(--accent) !important;
+}
+@keyframes ai-fill-flash{
+  0%{box-shadow:0 0 0 0 rgba(79,86,255,.5);background:#f0f1ff;}
+  50%{box-shadow:0 0 0 6px rgba(79,86,255,.15);}
+  100%{box-shadow:0 0 0 3px rgba(79,86,255,.1);}
+}
+
+/* Priority pills */
+.prio-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:.625rem;margin-bottom:1rem;
+}
+.prio-card{
+  border:2px solid var(--border);border-radius:12px;
+  padding:.75rem .5rem;text-align:center;cursor:pointer;
+  transition:var(--smooth);position:relative;
+}
+.prio-card:hover{border-color:#C8CDFF;background:#F7F7FF;}
+.prio-card.selected{border-color:var(--sel-col);background:var(--sel-bg);}
+.prio-card input[type=radio]{display:none;}
+.prio-icon{font-size:1.3rem;margin-bottom:.35rem;}
+.prio-name{font-size:.73rem;font-weight:700;color:var(--text);}
+.prio-desc{font-size:.63rem;color:var(--muted);margin-top:2px;}
+.prio-check{
+  position:absolute;top:5px;right:7px;
+  width:15px;height:15px;border-radius:50%;
+  background:var(--sel-col);
+  display:none;align-items:center;justify-content:center;
+  color:white;font-size:.5rem;
+}
+.prio-card.selected .prio-check{display:flex;}
+
+/* Route visualizer */
+.route-viz{display:flex;align-items:stretch;gap:10px;margin-bottom:1rem;}
+.route-line{
+  display:flex;flex-direction:column;align-items:center;
+  padding-top:13px;
+}
+.rdot{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--accent);background:white;flex-shrink:0;}
+.rdot.dest{border-color:var(--success);}
+.rconn{width:2px;flex:1;background:linear-gradient(to bottom,var(--accent),var(--success));min-height:22px;}
+.route-fields{flex:1;display:flex;flex-direction:column;gap:.625rem;}
+
+/* Distance badge */
+#distBadge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent-soft);color:var(--accent);
+  padding:4px 12px;border-radius:20px;
+  font-size:.75rem;font-weight:600;
+  margin-bottom:1rem;opacity:0;transition:opacity .3s;
+}
+#distBadge.visible{opacity:1;}
+
+/* Submit */
+.btn-submit{
+  width:100%;padding:13px;
+  background:var(--accent-g);color:white;border:none;
+  border-radius:12px;font-weight:700;font-size:.95rem;
+  cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:9px;
+  transition:var(--spring);
+  box-shadow:0 4px 18px rgba(79,86,255,.35);
+}
+.btn-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(79,86,255,.45);}
+.btn-submit:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+
+/* ── Preview Panel ────────────────────────────────────── */
+.preview-col{display:flex;flex-direction:column;gap:1.5rem;}
+
+.assign-card{
+  background:var(--surface);border-radius:var(--r-xl);
+  border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;
+}
+.assign-hdr{
+  padding:1.125rem 1.375rem;
+  background:linear-gradient(135deg,#EEEEFF,#F5F3FF);
+  border-bottom:1px solid #DDD8FF;
+  display:flex;align-items:center;gap:10px;
+}
+.assign-hdr-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--accent-g);color:white;
+  display:flex;align-items:center;justify-content:center;font-size:.9rem;
+  flex-shrink:0;
+}
+.assign-hdr h3{font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;color:var(--primary);}
+.assign-hdr p{font-size:.73rem;color:var(--muted);margin-top:1px;}
+.assign-body{padding:1.25rem 1.375rem;}
+.assign-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;border-bottom:1px solid #F4F6FB;
+}
+.assign-item:last-child{border-bottom:none;padding-bottom:0;}
+.aico{
+  width:42px;height:42px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;flex-shrink:0;
+}
+.aimg{width:42px;height:42px;border-radius:11px;object-fit:cover;flex-shrink:0;}
+.ainfo h4{font-weight:600;font-size:.87rem;color:var(--primary);}
+.ainfo p{font-size:.73rem;color:var(--muted);margin-top:2px;}
+.abadge{
+  margin-left:auto;padding:3px 9px;border-radius:20px;
+  font-size:.68rem;font-weight:700;white-space:nowrap;
+}
+.bg{background:#ECFDF5;color:#059669;}.bb{background:var(--accent-soft);color:var(--accent);}
+
+/* Skeleton */
+.sk{
+  background:linear-gradient(90deg,#F4F6FB 25%,#E8EBF4 50%,#F4F6FB 75%);
+  background-size:200% 100%;animation:shim 1.4s infinite;border-radius:8px;height:14px;
+}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.preview-ph{
+  padding:2rem 1.375rem;text-align:center;color:var(--muted);
+}
+.preview-ph i{font-size:2.2rem;margin-bottom:.875rem;opacity:.3;display:block;}
+.preview-ph p{font-size:.83rem;}
+
+/* Priority meter */
+.meter-card{
+  background:var(--surface);border-radius:var(--r-xl);
+  border:1px solid var(--border);box-shadow:var(--shadow-sm);
+  padding:1.25rem 1.375rem;
+}
+.meter-title{
+  display:flex;align-items:center;gap:9px;
+  font-family:'Outfit',sans-serif;font-weight:700;
+  font-size:.92rem;color:var(--primary);margin-bottom:1rem;
+}
+
+/* Recent requests */
+.recent-card{
+  background:var(--surface);border-radius:var(--r-xl);
+  border:1px solid var(--border);box-shadow:var(--shadow-sm);
+  overflow:hidden;margin-top:2rem;
+}
+.recent-hdr{
+  padding:1.125rem 1.625rem;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.recent-hdr h3{font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;color:var(--primary);}
+table{width:100%;border-collapse:collapse;}
+th{
+  text-align:left;padding:11px 18px;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--muted);font-weight:700;background:#F7F9FE;
+  border-bottom:1px solid var(--border);
+}
+td{
+  padding:14px 18px;font-size:.84rem;
+  border-bottom:1px solid #F4F6FB;color:var(--text);vertical-align:middle;
+}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#FAFBFE;}
+.pill{
+  padding:3px 9px;border-radius:20px;
+  font-size:.68rem;font-weight:700;text-transform:uppercase;
+}
+.pill-active   {background:#ECFDF5;color:#059669;}
+.pill-pending  {background:#FFF7ED;color:#D97706;}
+.pill-completed{background:#F0FDF4;color:#15803D;}
+.pill-rejected {background:#FEF2F2;color:#DC2626;}
+.pill-standard {background:var(--accent-soft);color:var(--accent);}
+.pill-high     {background:#FEF2F2;color:#DC2626;}
+.pill-emergency{background:#4C1D95;color:#DDD6FE;}
+.pill-vip      {background:#FAF5FF;color:#7C3AED;}
+
+/* ── Toast ────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:2rem;right:2rem;
+  background:var(--primary);color:white;
+  padding:1rem 1.375rem;border-radius:16px;
+  display:flex;align-items:center;gap:11px;
+  box-shadow:var(--shadow-chat);
+  transform:translateY(130px);
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1);
+  z-index:300;min-width:300px;max-width:420px;
+}
+.toast.show{transform:translateY(0);}
+
+/* ═══════════════════════════════════════════════════════
+   BOOKSMART AI CHATBOT (State-of-the-Art)
+═══════════════════════════════════════════════════════ */
+
+/* Floating button */
+.ai-fab{
+  position:fixed;bottom:2rem;right:2rem;z-index:200;
+  width:60px;height:60px;border-radius:50%;
+  background:var(--accent-g);color:white;border:none;cursor:pointer;
+  box-shadow:0 8px 32px rgba(79,86,255,.45),0 2px 8px rgba(0,0,0,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.35rem;transition:var(--spring);
+  animation:fab-appear .6s .3s ease-out both;
+}
+@keyframes fab-appear{from{transform:scale(0) rotate(-45deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+.ai-fab:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 14px 40px rgba(79,86,255,.55);}
+.ai-fab.open{transform:scale(1) rotate(0);}
+.ai-fab-badge{
+  position:absolute;top:-2px;right:-2px;
+  width:18px;height:18px;border-radius:50%;
+  background:#EF4444;border:2px solid white;
+  font-size:.6rem;font-weight:700;color:white;
+  display:flex;align-items:center;justify-content:center;
+}
+.ai-fab-ring{
+  position:fixed;bottom:2rem;right:2rem;z-index:199;
+  width:60px;height:60px;border-radius:50%;
+  border:2px solid rgba(79,86,255,.4);
+  animation:ring-pulse 2.5s infinite;pointer-events:none;
+}
+@keyframes ring-pulse{
+  0%{transform:scale(1);opacity:.7;}
+  70%{transform:scale(1.6);opacity:0;}
+  100%{transform:scale(1);opacity:0;}
+}
+
+/* Chat window */
+.chat-window{
+  position:fixed;bottom:5.5rem;right:2rem;z-index:250;
+  width:390px;
+  background:rgba(10,14,35,.97);backdrop-filter:blur(24px);
+  border:1px solid rgba(79,86,255,.25);
+  border-radius:24px;
+  box-shadow:var(--shadow-chat);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transform:scale(.85) translateY(30px);
+  transform-origin:bottom right;
+  opacity:0;pointer-events:none;
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1),opacity .28s ease;
+  max-height:580px;
+}
+.chat-window.open{
+  transform:scale(1) translateY(0);
+  opacity:1;pointer-events:all;
+}
+
+/* Chat header */
+.chat-head{
+  background:linear-gradient(135deg,rgba(79,86,255,.3) 0%,rgba(124,58,237,.3) 100%);
+  border-bottom:1px solid rgba(79,86,255,.2);
+  padding:1rem 1.25rem;
+  display:flex;align-items:center;gap:12px;
+  flex-shrink:0;
+}
+.chat-head-icon{
+  width:38px;height:38px;border-radius:11px;flex-shrink:0;
+  background:var(--accent-g);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.05rem;color:white;
+  box-shadow:0 4px 14px rgba(79,86,255,.4);
+}
+.chat-head-name{
+  font-family:'Outfit',sans-serif;font-weight:700;
+  font-size:.95rem;color:white;
+}
+.chat-head-sub{font-size:.7rem;color:rgba(255,255,255,.55);margin-top:1px;}
+.chat-head-live{
+  display:flex;align-items:center;gap:5px;
+  margin-left:auto;font-size:.68rem;color:rgba(255,255,255,.5);
+}
+.chat-head-close{
+  background:rgba(255,255,255,.08);border:none;cursor:pointer;
+  color:rgba(255,255,255,.6);padding:6px;border-radius:7px;
+  transition:.2s;margin-left:.5rem;
+}
+.chat-head-close:hover{background:rgba(255,255,255,.16);color:white;}
+
+/* Messages */
+.chat-messages{
+  flex:1;overflow-y:auto;padding:.875rem 1rem;
+  display:flex;flex-direction:column;gap:.625rem;
+  scroll-behavior:smooth;
+  min-height:220px;
+}
+.chat-messages::-webkit-scrollbar{width:4px;}
+.chat-messages::-webkit-scrollbar-track{background:transparent;}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(79,86,255,.3);border-radius:4px;}
+
+.msg{
+  display:flex;gap:8px;
+  animation:msgIn .25s ease-out;
+}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.msg.user{flex-direction:row-reverse;}
+
+.msg-avatar{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;margin-top:2px;
+}
+.msg-avatar.ai{background:var(--accent-g);color:white;}
+.msg-avatar.user{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);}
+
+.msg-bubble{
+  max-width:82%;padding:.7rem .9rem;border-radius:14px;
+  font-size:.82rem;line-height:1.55;
+}
+.msg.ai .msg-bubble{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08);
+  color:rgba(255,255,255,.9);
+  border-top-left-radius:4px;
+}
+.msg.user .msg-bubble{
+  background:var(--accent-g);color:white;
+  border-top-right-radius:4px;
+  box-shadow:0 4px 14px rgba(79,86,255,.3);
+}
+
+/* Apply-to-form button inside chat */
+.apply-btn{
+  margin:.5rem 0 .25rem;padding:.55rem 1.1rem;
+  background:linear-gradient(135deg,#10B981,#059669);
+  color:white;border:none;border-radius:10px;
+  font-size:.78rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:7px;
+  transition:var(--spring);box-shadow:0 4px 14px rgba(16,185,129,.35);
+  width:100%;justify-content:center;
+}
+.apply-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,.45);}
+.apply-hint{
+  font-size:.7rem;color:rgba(255,255,255,.4);
+  text-align:center;margin-top:4px;
+}
+
+/* Typing indicator */
+.typing-wrap{display:flex;gap:8px;animation:msgIn .25s ease-out;}
+.typing-bubble{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08);
+  padding:.7rem .875rem;border-radius:14px;border-top-left-radius:4px;
+  display:flex;align-items:center;gap:5px;
+}
+.typing-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.5);
+  animation:bounce 1.2s infinite;
+}
+.typing-dot:nth-child(2){animation-delay:.15s;}
+.typing-dot:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,100%{transform:translateY(0);}40%{transform:translateY(-6px);}}
+
+/* Quick reply chips */
+.quick-chips{
+  display:flex;flex-wrap:wrap;gap:.4rem;
+  padding:0 1rem .5rem;
+}
+.qchip{
+  background:rgba(79,86,255,.15);
+  border:1px solid rgba(79,86,255,.25);
+  color:rgba(255,255,255,.75);
+  padding:4px 11px;border-radius:20px;
+  font-size:.72rem;font-weight:600;cursor:pointer;
+  transition:var(--smooth);
+}
+.qchip:hover{background:rgba(79,86,255,.3);color:white;}
+
+/* Chat input */
+.chat-input-wrap{
+  padding:.875rem 1rem;
+  border-top:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:flex-end;gap:.5rem;
+  flex-shrink:0;
+}
+.chat-input{
+  flex:1;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;
+  padding:.6rem .9rem;color:white;font-size:.83rem;
+  resize:none;max-height:100px;line-height:1.45;
+  transition:border-color .2s;
+}
+.chat-input::placeholder{color:rgba(255,255,255,.3);}
+.chat-input:focus{border-color:rgba(79,86,255,.5);}
+.chat-send{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:var(--accent-g);color:white;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;transition:var(--spring);
+  box-shadow:0 4px 12px rgba(79,86,255,.3);
+}
+.chat-send:hover{transform:scale(1.1);}
+.chat-send:disabled{opacity:.4;transform:none;cursor:not-allowed;}
+
+/* Powered by footer */
+.chat-footer{
+  padding:.5rem 1rem .75rem;
+  font-size:.64rem;color:rgba(255,255,255,.25);
+  text-align:center;
+  border-top:1px solid rgba(255,255,255,.04);
+  flex-shrink:0;
+}
+
+/* ── Animations ──────────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media(max-width:1200px){.main-grid{grid-template-columns:1fr;}}
+@media(max-width:768px){
+  .app{grid-template-columns:1fr;}
+  aside{position:fixed;left:-280px;top:0;height:100%;transition:.3s;box-shadow:12px 0 32px rgba(0,0,0,.12);}
+  .app.mobile-open aside{left:0;}
+  .hero-banner{flex-direction:column;gap:1.25rem;}
+  .prio-grid{grid-template-columns:1fr 1fr;}
+  .form-grid-3{grid-template-columns:1fr 1fr;}
+  .chat-window{right:1rem;left:1rem;width:auto;}
+  .ai-fab,.ai-fab-ring{right:1.25rem;}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ── Sidebar ── -->
+  <aside id="sidebar">
+    <a href="#" class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
+      <span class="brand-name">TruFleet</span>
+    </a>
+    <button class="toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></button>
+
+    <div class="nav-section-label" style="margin-top:1rem;">Operations</div>
+    <a href="Dasboard_admin.html" class="nav-item"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+    <a href="Vehicle_Management_admin.html" class="nav-item"><i class="fa-solid fa-truck-front"></i><span>Fleet Manager</span></a>
+    <a href="Driver_management_admin.html" class="nav-item"><i class="fa-solid fa-id-card"></i><span>Drivers</span></a>
+    <a href="Dispatch_Control_admin.html" class="nav-item"><i class="fa-solid fa-route"></i><span>Dispatch Control</span></a>
+    <a href="Ride_Requester_admin.html" class="nav-item"><i class="fa-solid fa-car-side"></i><span>Ride Requester</span></a>
+    <a href="BookSmart.html" class="nav-item active"><i class="fa-solid fa-wand-magic-sparkles"></i><span>BookSmart AI</span></a>
+    <div class="nav-section-label">Management</div>
+    <a href="Insurance_admin.html" class="nav-item"><i class="fa-solid fa-file-shield"></i><span>Insurance</span></a>
+    <a href="User_Approval_admin.html" class="nav-item"><i class="fa-solid fa-users-gear"></i><span>User Approvals</span></a>
+    <div class="nav-spacer"></div>
+    <a href="Setting_admin.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+    <a href="login.html" class="nav-item" style="color:var(--danger);"
+       onclick="localStorage.removeItem('trufleet_token');localStorage.removeItem('trufleet_user');">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>
+    </a>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main>
+    <header>
+      <div class="hdr-left">
+        <div>
+          <div class="page-title"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--accent);margin-right:8px;"></i>BookSmart AI</div>
+          <div class="page-sub">Gemini-powered intelligent trip booking</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="ai-status-pill">
+          <span class="ai-dot"></span>
+          <span>Gemini Active</span>
+        </div>
+        <div class="profile-chip">
+          <img id="profileImg" class="profile-img" src="" alt="">
+          <div>
+            <div class="pname" id="profileName">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-body">
+
+      <!-- ── Hero ── -->
+      <div class="hero-banner">
+        <div class="hero-text">
+          <h1>✨ Book Smarter, Not Harder</h1>
+          <p>Chat with our AI assistant and let it intelligently fill your trip request — it understands urgency, VIP requirements, cargo type, and more. State-of-the-art dispatch, powered by Gemini.</p>
+        </div>
+        <div class="hero-badge">
+          <div class="hb-num" id="heroBadgeNum">AI</div>
+          <div class="hb-lbl">Powered by Gemini</div>
+        </div>
+      </div>
+
+      <!-- ── Main Grid: Form + Preview ── -->
+      <div class="main-grid">
+
+        <!-- ─ Request Form ─ -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" style="background:var(--accent-soft);color:var(--accent);">
+              <i class="fa-solid fa-paper-plane"></i>
+            </div>
+            <div>
+              <h2>New Trip Request</h2>
+              <p>Fields auto-fill when AI is done chatting · or fill manually anytime</p>
+            </div>
+          </div>
+
+          <form class="form-body" id="rideForm" onsubmit="submitRequest(event)">
+
+            <!-- AI Suggestion bar -->
+            <div id="aiSuggestionBar" style="display:none;
+              background:linear-gradient(135deg,#EEEEFF,#F5F3FF);
+              border:1.5px solid rgba(79,86,255,.25);border-radius:12px;
+              padding:.875rem 1rem;margin-bottom:1.25rem;
+              display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="background:var(--accent-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;font-size:.82rem;"><i class="fa-solid fa-brain" style="-webkit-text-fill-color:var(--accent);margin-right:5px;"></i>AI Suggestion Ready</span>
+              <span id="aiSuggestionText" style="font-size:.78rem;color:var(--muted);flex:1;"></span>
+              <button type="button" id="applySuggestionBtn" onclick="applyAISuggestion()"
+                style="background:var(--accent-g);color:white;border:none;padding:6px 16px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 3px 10px rgba(79,86,255,.3);">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Apply to Form
+              </button>
+            </div>
+
+            <!-- Priority -->
+            <div class="sec-label"><i class="fa-solid fa-bolt"></i>Priority Level</div>
+            <div class="prio-grid">
+              <label class="prio-card selected" id="pc-standard" style="--sel-col:#4F56FF;--sel-bg:#EEEEFF;" onclick="selectPriority('standard','pc-standard')">
+                <input type="radio" name="priority" value="standard" checked>
+                <div class="prio-check"><i class="fa-solid fa-check"></i></div>
+                <div class="prio-icon">🚗</div>
+                <div class="prio-name">Standard</div>
+                <div class="prio-desc">Scheduled</div>
+              </label>
+              <label class="prio-card" id="pc-high" style="--sel-col:#DC2626;--sel-bg:#FEF2F2;" onclick="selectPriority('high','pc-high')">
+                <input type="radio" name="priority" value="high">
+                <div class="prio-check"><i class="fa-solid fa-check"></i></div>
+                <div class="prio-icon">🚨</div>
+                <div class="prio-name">High</div>
+                <div class="prio-desc">Urgent</div>
+              </label>
+              <label class="prio-card" id="pc-emergency" style="--sel-col:#7C3AED;--sel-bg:#F5F3FF;" onclick="selectPriority('emergency','pc-emergency')">
+                <input type="radio" name="priority" value="emergency">
+                <div class="prio-check"><i class="fa-solid fa-check"></i></div>
+                <div class="prio-icon">🆘</div>
+                <div class="prio-name">Emergency</div>
+                <div class="prio-desc">Immediate</div>
+              </label>
+              <label class="prio-card" id="pc-vip" style="--sel-col:#9333EA;--sel-bg:#FAF5FF;" onclick="selectPriority('vip','pc-vip')">
+                <input type="radio" name="priority" value="vip">
+                <div class="prio-check"><i class="fa-solid fa-check"></i></div>
+                <div class="prio-icon">⭐</div>
+                <div class="prio-name">VIP</div>
+                <div class="prio-desc">Executive</div>
+              </label>
+            </div>
+
+            <!-- Route -->
+            <div class="sec-label"><i class="fa-solid fa-route"></i>Route Details</div>
+            <div class="route-viz">
+              <div class="route-line">
+                <div class="rdot"></div>
+                <div class="rconn"></div>
+                <div class="rdot dest"></div>
+              </div>
+              <div class="route-fields">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Pickup / Origin <span class="req">*</span></label>
+                  <input type="text" id="f-origin" class="form-control" placeholder="e.g. Warehouse A, Chennai" required oninput="onFieldChange()">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Drop-off / Destination <span class="req">*</span></label>
+                  <input type="text" id="f-dest" class="form-control" placeholder="e.g. Client Site, Coimbatore" required oninput="onFieldChange()">
+                </div>
+              </div>
+            </div>
+
+            <div id="distBadge"><i class="fa-solid fa-arrows-left-right"></i><span id="distVal">--</span></div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Estimated Distance (km)</label>
+                <input type="number" id="f-distance" class="form-control" placeholder="e.g. 45" min="1" oninput="updateDistBadge();refreshPreview();">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Requested Date</label>
+                <input type="date" id="f-date" class="form-control">
+              </div>
+            </div>
+
+            <!-- Vehicle prefs -->
+            <div class="sec-label"><i class="fa-solid fa-truck"></i>Vehicle Preferences</div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Vehicle Type</label>
+                <select id="f-vehicle-type" class="form-control" onchange="refreshPreview()">
+                  <option value="">Any Type</option>
+                  <option value="Car">Car</option>
+                  <option value="Bus">Bus</option>
+                  <option value="Truck">Truck</option>
+                  <option value="EV">EV</option>
+                  <option value="Two-wheeler">Two-wheeler</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Functional Category</label>
+                <select id="f-category" class="form-control" onchange="refreshPreview()">
+                  <option value="">Any Category</option>
+                  <option value="Emergency">Emergency</option>
+                  <option value="VIP transport">VIP transport</option>
+                  <option value="Cargo">Cargo</option>
+                  <option value="Passenger">Passenger</option>
+                  <option value="Maintenance">Maintenance</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Load details -->
+            <div class="sec-label"><i class="fa-solid fa-boxes-stacked"></i>Load Details</div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label">Cargo Type</label>
+                <select id="f-cargo-type" class="form-control" onchange="refreshPreview()">
+                  <option value="">None / Passengers</option>
+                  <option value="General Goods">General Goods</option>
+                  <option value="Perishable">Perishable</option>
+                  <option value="Fragile">Fragile</option>
+                  <option value="Hazardous">Hazardous</option>
+                  <option value="Heavy Machinery">Heavy Machinery</option>
+                  <option value="Documents">Documents</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cargo Weight (kg)</label>
+                <input type="text" id="f-cargo-weight" class="form-control" placeholder="e.g. 500 kg">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Passenger Count</label>
+                <input type="number" id="f-passengers" class="form-control" placeholder="1" min="1" max="50" value="1" oninput="refreshPreview()">
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="sec-label"><i class="fa-solid fa-note-sticky"></i>Additional Notes</div>
+            <div class="form-group">
+              <textarea id="f-notes" class="form-control" placeholder="Special instructions, access codes, preferred route…" oninput="refreshPreview()"></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+              <i class="fa-solid fa-rocket"></i>
+              <span id="submitLabel">Submit &amp; Auto-Assign</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- ─ Right Preview Panel ─ -->
+        <div class="preview-col">
+
+          <!-- Auto-assign preview -->
+          <div class="assign-card" id="assignCard">
+            <div class="assign-hdr">
+              <div class="assign-hdr-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <div>
+                <h3>Auto-Assign Preview</h3>
+                <p>Live best-match updates as you type</p>
+              </div>
+            </div>
+            <div class="assign-body" id="assignBody">
+              <div class="preview-ph">
+                <i class="fa-solid fa-magnifying-glass-location"></i>
+                <p>Enter origin/destination or use the AI chat to fill the form.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trip Summary -->
+          <div class="card" style="padding:1.25rem 1.375rem;" id="summaryCard">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:1rem;">
+              <div class="card-icon" style="background:#F0FDF4;color:var(--success);width:34px;height:34px;border-radius:10px;font-size:.85rem;">
+                <i class="fa-solid fa-clipboard-list"></i>
+              </div>
+              <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:.92rem;color:var(--primary);">Trip Summary</span>
+            </div>
+            <div id="summaryBody">
+              <div style="color:var(--muted);font-size:.82rem;text-align:center;padding:.875rem 0;">Fill in the form to see a live summary.</div>
+            </div>
+          </div>
+
+          <!-- Priority meter -->
+          <div class="meter-card">
+            <div class="meter-title">
+              <i class="fa-solid fa-gauge-high" style="color:var(--warning);"></i>
+              Priority Meter
+            </div>
+            <div id="priorityMeter"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Recent Requests ── -->
+      <div class="recent-card">
+        <div class="recent-hdr">
+          <h3><i class="fa-solid fa-clock-rotate-left" style="margin-right:8px;color:var(--accent);"></i>Recent Requests</h3>
+          <a href="Dispatch_Control_admin.html" style="font-size:.82rem;color:var(--accent);font-weight:600;text-decoration:none;">View All <i class="fa-solid fa-arrow-right" style="font-size:.7rem;"></i></a>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Ticket</th><th>Route</th><th>Priority</th><th>Vehicle</th><th>Driver</th><th>Date</th><th>Status</th></tr>
+            </thead>
+            <tbody id="recentBody">
+              <tr><td colspan="7" style="text-align:center;padding:2rem;color:#94A3B8;"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── AI FAB ring + button ── -->
+<div class="ai-fab-ring" id="fabRing"></div>
+<button class="ai-fab" id="aiFab" onclick="toggleChat()" title="Open BookSmart AI">
+  <i class="fa-solid fa-robot" id="fabIcon"></i>
+  <span class="ai-fab-badge" id="fabBadge" style="display:none;">1</span>
+</button>
+
+<!-- ── Chat Window ── -->
+<div class="chat-window" id="chatWindow">
+
+  <div class="chat-head">
+    <div class="chat-head-icon"><i class="fa-solid fa-brain"></i></div>
+    <div>
+      <div class="chat-head-name">BookSmart AI</div>
+      <div class="chat-head-sub">Powered by Google Gemini</div>
+    </div>
+    <div class="chat-head-live">
+      <span style="width:6px;height:6px;border-radius:50%;background:#10B981;display:inline-block;animation:pulse-dot 1.8s infinite;"></span>
+      Live
+    </div>
+    <button class="chat-head-close" onclick="toggleChat()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <!-- Messages rendered here -->
+  </div>
+
+  <!-- Quick reply chips (shown conditionally) -->
+  <div class="quick-chips" id="quickChips">
+    <span class="qchip" onclick="sendQuick('It is urgent!')">🚨 Urgent</span>
+    <span class="qchip" onclick="sendQuick('I want VIP / premium service')">⭐ VIP</span>
+    <span class="qchip" onclick="sendQuick('I am transporting cargo')">📦 Has Cargo</span>
+    <span class="qchip" onclick="sendQuick('It is a scheduled trip')">📅 Scheduled</span>
+  </div>
+
+  <div class="chat-input-wrap">
+    <textarea
+      id="chatInput"
+      class="chat-input"
+      placeholder="Describe your trip…"
+      rows="1"
+      onkeydown="chatKeydown(event)"
+      oninput="autoResizeInput(this)"
+    ></textarea>
+    <button class="chat-send" id="chatSend" onclick="sendMessage()" title="Send">
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
+  </div>
+
+  <div class="chat-footer">✨ BookSmart AI · Powered by Google Gemini 2.0 Flash · TruFleet</div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast">
+  <i id="toastIcon" class="fa-solid fa-circle-check" style="font-size:1.15rem;flex-shrink:0;"></i>
+  <div>
+    <div id="toastTitle" style="font-weight:700;font-size:.88rem;"></div>
+    <div id="toastMsg"   style="font-size:.76rem;opacity:.8;margin-top:2px;"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════════ */
+const TOKEN = localStorage.getItem('trufleet_token');
+const USER  = JSON.parse(localStorage.getItem('trufleet_user') || '{}');
+if (!TOKEN) { window.location.href = 'login.html'; }
+(function(){
+  try {
+    const p = JSON.parse(atob(TOKEN.split('.')[1]));
+    if (!p || !['admin','manager'].includes(p.role)) {
+      localStorage.clear(); window.location.href = 'login.html';
+    }
+  } catch { localStorage.clear(); window.location.href = 'login.html'; }
+})();
+const authH = { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN };
+
+/* ── Profile ── */
+(function(){
+  const n = USER.email?.split('@')[0]?.replace(/[._]/g,' ') || 'Admin';
+  const cap = n.charAt(0).toUpperCase() + n.slice(1);
+  document.getElementById('profileName').textContent = cap;
+  document.getElementById('profileImg').src =
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(cap)}&background=EEEEFF&color=4F56FF&rounded=true`;
+})();
+
+/* ── Sidebar toggle ── */
+const appEl = document.getElementById('app');
+const sbEl  = document.getElementById('sidebar');
+function toggleSidebar(){
+  if (window.innerWidth <= 768) appEl.classList.toggle('mobile-open');
+  else appEl.classList.toggle('collapsed');
+}
+sbEl.addEventListener('mouseenter', () => {
+  if (window.innerWidth > 768 && appEl.classList.contains('collapsed')) {
+    appEl.classList.remove('collapsed'); sbEl.dataset.ae = '1';
+  }
+});
+sbEl.addEventListener('mouseleave', () => {
+  if (window.innerWidth > 768 && sbEl.dataset.ae === '1') {
+    appEl.classList.add('collapsed'); sbEl.dataset.ae = '0';
+  }
+});
+
+/* ── Toast ── */
+function showToast(title, msg, type = 'success') {
+  const t = document.getElementById('toast');
+  const ico = document.getElementById('toastIcon');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastMsg').textContent   = msg;
+  const cfg = {
+    success:  { bg:'#0D1B3E',               cls:'fa-solid fa-circle-check' },
+    error:    { bg:'#DC2626',               cls:'fa-solid fa-circle-exclamation' },
+    warning:  { bg:'#D97706',               cls:'fa-solid fa-triangle-exclamation' },
+    dispatch: { bg:'linear-gradient(135deg,#4F56FF,#7C3AED)', cls:'fa-solid fa-rocket' }
+  };
+  const c = cfg[type] || cfg.success;
+  t.style.background = c.bg;
+  ico.className = c.cls + ' fa-fw';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), type === 'dispatch' ? 7000 : type === 'error' ? 6000 : 4000);
+}
+
+/* ══════════════════════════════════════════════════
+   FORM LOGIC
+══════════════════════════════════════════════════ */
+const PRIORITIES = ['standard','high','emergency','vip'];
+let _priority = 'standard';
+
+function selectPriority(v, id) {
+  _priority = v;
+  PRIORITIES.forEach(p => {
+    const el = document.getElementById('pc-' + p);
+    if (el) el.classList.toggle('selected', p === v);
+  });
+  document.querySelector(`input[value="${v}"]`).checked = true;
+  updatePriorityMeter();
+  updateSummary();
+  refreshPreview();
+}
+
+function updatePriorityMeter() {
+  const levels = [
+    { label:'Standard',      active: true,                              color:'#4F56FF' },
+    { label:'High',          active: ['high','emergency','vip'].includes(_priority), color:'#F59E0B' },
+    { label:'Emergency/VIP', active: ['emergency','vip'].includes(_priority),        color:'#DC2626' }
+  ];
+  document.getElementById('priorityMeter').innerHTML = levels.map(l => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:.625rem;">
+      <div style="width:9px;height:9px;border-radius:50%;background:${l.active?l.color:'#DDE2EE'};flex-shrink:0;
+        box-shadow:${l.active?'0 0 7px '+l.color:'none'};transition:.4s;"></div>
+      <div style="flex:1;height:6px;border-radius:3px;background:${l.active?l.color:'#DDE2EE'};transition:.4s ease;"></div>
+      <span style="font-size:.72rem;color:${l.active?l.color:'#A0AECE'};font-weight:700;min-width:80px;">${l.label}</span>
+    </div>`).join('');
+}
+
+function updateDistBadge() {
+  const v = document.getElementById('f-distance').value;
+  const b = document.getElementById('distBadge');
+  if (v) {
+    document.getElementById('distVal').textContent = v + ' km estimated';
+    b.classList.add('visible');
+  } else {
+    b.classList.remove('visible');
+  }
+  updateSummary();
+}
+
+function onFieldChange() { updateSummary(); }
+
+function updateSummary() {
+  const origin   = document.getElementById('f-origin').value.trim();
+  const dest     = document.getElementById('f-dest').value.trim();
+  const distance = document.getElementById('f-distance').value;
+  const date     = document.getElementById('f-date').value;
+  const vtype    = document.getElementById('f-vehicle-type').value;
+  const cat      = document.getElementById('f-category').value;
+  const pax      = document.getElementById('f-passengers').value;
+  if (!origin && !dest) {
+    document.getElementById('summaryBody').innerHTML =
+      `<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:.875rem 0;">Fill in the form to see a live summary.</div>`;
+    return;
+  }
+  const pc = { standard:'#4F56FF', high:'#DC2626', emergency:'#7C3AED', vip:'#9333EA' }[_priority] || '#4F56FF';
+  const rows = [
+    origin   && ['<i class="fa-solid fa-location-dot"></i> From',   origin],
+    dest     && ['<i class="fa-solid fa-flag-checkered"></i> To',    dest],
+    distance && ['<i class="fa-solid fa-arrows-left-right"></i> Dist', distance + ' km'],
+    date     && ['<i class="fa-regular fa-calendar"></i> Date',      new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})],
+    vtype    && ['<i class="fa-solid fa-truck"></i> Vehicle',        vtype],
+    cat      && ['<i class="fa-solid fa-tag"></i> Category',         cat],
+    pax      && ['<i class="fa-solid fa-user"></i> Passengers',      pax],
+  ].filter(Boolean);
+  document.getElementById('summaryBody').innerHTML = `
+    ${rows.map(([lbl,val]) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:.76rem;color:var(--muted);">${lbl}</span>
+        <span style="font-size:.82rem;font-weight:500;color:var(--text);text-align:right;max-width:58%;">${val}</span>
+      </div>`).join('')}
+    <div style="margin-top:10px;display:flex;align-items:center;gap:7px;">
+      <span style="font-size:.73rem;color:var(--muted);">Priority</span>
+      <span style="background:${pc}18;color:${pc};padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:capitalize;">${_priority}</span>
+    </div>`;
+}
+
+/* ── Auto-assign preview (debounced) ── */
+let _previewTimer = null;
+function refreshPreview() {
+  clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(fetchPreview, 450);
+  updateSummary();
+}
+
+function setPreviewLoading() {
+  document.getElementById('assignBody').innerHTML = `
+    <div style="padding:1.25rem;">
+      <div style="display:flex;gap:11px;margin-bottom:.875rem;align-items:center;">
+        <div style="width:42px;height:42px;border-radius:11px;" class="sk"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+          <div class="sk" style="width:60%;"></div><div class="sk" style="width:40%;height:11px;"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:11px;align-items:center;">
+        <div style="width:42px;height:42px;border-radius:50%;" class="sk"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+          <div class="sk" style="width:55%;"></div><div class="sk" style="width:35%;height:11px;"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function fetchPreview() {
+  const vtype = document.getElementById('f-vehicle-type').value;
+  const cat   = document.getElementById('f-category').value;
+  const dist  = document.getElementById('f-distance').value;
+  const pax   = document.getElementById('f-passengers').value;
+  const cargo = document.getElementById('f-cargo-type').value;
+  const notes = document.getElementById('f-notes').value.trim();
+  if (!vtype && !cat && !dist) {
+    document.getElementById('assignBody').innerHTML = `
+      <div class="preview-ph">
+        <i class="fa-solid fa-magnifying-glass-location"></i>
+        <p>Select vehicle type, category, or enter distance to preview best match.</p>
+      </div>`;
+    return;
+  }
+  setPreviewLoading();
+  try {
+    const p = new URLSearchParams();
+    if (vtype) p.set('vehicle_type', vtype);
+    if (cat)   p.set('functional_category', cat);
+    if (dist)  p.set('distance_km', dist);
+    if (pax)   p.set('passenger_count', pax);
+    if (cargo) p.set('cargo_type', cargo);
+    if (notes) p.set('notes', notes);
+    p.set('priority', _priority);
+    const res  = await fetch('/api/dispatch/preview-assign?' + p.toString(), { headers: authH });
+    const data = await res.json();
+    renderPreview(data.vehicle, data.driver, data.intelligence);
+  } catch {
+    document.getElementById('assignBody').innerHTML =
+      `<div class="preview-ph"><i class="fa-solid fa-circle-exclamation"></i><p>Could not load preview.</p></div>`;
+  }
+}
+
+function renderPreview(vehicle, driver, intel) {
+  if (!vehicle && !driver) {
+    document.getElementById('assignBody').innerHTML = `
+      <div class="preview-ph">
+        <i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);"></i>
+        <p style="color:var(--warning);font-weight:600;">No available vehicle or driver found.</p>
+        <p style="margin-top:.4rem;">Check fleet availability or change filters.</p>
+      </div>`;
+    return;
+  }
+  let intelHtml = '';
+  if (intel) {
+    const classColors = { short:'#10B981', medium:'#4F56FF', long:'#F59E0B', 'ultra-long':'#DC2626' };
+    const badges = [];
+    if (intel.trip_classification) {
+      const col = classColors[intel.trip_classification] || '#64748B';
+      const lbl = intel.trip_classification.replace('-',' ').toUpperCase();
+      badges.push(`<span style="background:${col}18;color:${col};padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:700;"><i class="fa-solid fa-route" style="margin-right:3px;"></i>${lbl}</span>`);
+    }
+    if (intel.is_long_trip)  badges.push(`<span style="background:#F59E0B18;color:#D97706;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:700;"><i class="fa-solid fa-road" style="margin-right:3px;"></i>LONG HAUL</span>`);
+    if (intel.vip_required)  badges.push(`<span style="background:#9333EA18;color:#9333EA;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:700;"><i class="fa-solid fa-star" style="margin-right:3px;"></i>VIP</span>`);
+    if (intel.recommended_vehicle_type) badges.push(`<span style="background:var(--accent-mid);color:var(--accent);padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:700;"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:3px;"></i>SMART: ${intel.recommended_vehicle_type}</span>`);
+    if (badges.length) intelHtml = `
+      <div style="padding:8px 0 4px;border-bottom:1px solid #EEEEFF;margin-bottom:4px;">
+        <div style="font-size:.67rem;color:var(--muted);font-weight:700;letter-spacing:.05em;margin-bottom:5px;"><i class="fa-solid fa-brain" style="margin-right:4px;"></i>TRIP INTELLIGENCE</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">${badges.join('')}</div>
+      </div>`;
+  }
+  const vH = vehicle ? `
+    <div class="assign-item">
+      <div class="aico" style="background:var(--accent-soft);color:var(--accent);"><i class="fa-solid fa-truck"></i></div>
+      <div class="ainfo"><h4>${vehicle.make} ${vehicle.model}</h4><p>${vehicle.registration_number||vehicle.vin||''} · ${vehicle.vehicle_type||''} · ${vehicle.functional_category||''}</p></div>
+      <span class="abadge bb">Available</span>
+    </div>` : `
+    <div class="assign-item">
+      <div class="aico" style="background:#FEF2F2;color:var(--danger);"><i class="fa-solid fa-truck"></i></div>
+      <div class="ainfo"><h4 style="color:var(--danger);">No vehicle</h4><p>Try different filters</p></div>
+    </div>`;
+  const dName = driver?.users?.full_name || driver?.users?.email || 'Unknown';
+  const dH = driver ? `
+    <div class="assign-item">
+      <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(dName)}&background=ECFDF5&color=059669&rounded=true" class="aimg" alt="${dName}">
+      <div class="ainfo"><h4>${dName}</h4><p>Safety: ${driver.safety_score??'—'} · ${driver.status}</p></div>
+      <span class="abadge bg">Ready</span>
+    </div>` : `
+    <div class="assign-item">
+      <div class="aico" style="background:#FEF2F2;color:var(--danger);"><i class="fa-solid fa-user-slash"></i></div>
+      <div class="ainfo"><h4 style="color:var(--danger);">No driver</h4><p>All on-trip or off-duty</p></div>
+    </div>`;
+  document.getElementById('assignBody').innerHTML = `
+    <div style="padding:.25rem 0;">${intelHtml}${vH}${dH}</div>
+    <div style="padding:12px 0 0;font-size:.74rem;color:var(--muted);display:flex;align-items:center;gap:5px;">
+      <i class="fa-solid fa-circle-info"></i>Final assignment happens on submit. This preview is live.
+    </div>`;
+}
+
+/* ── Submit ── */
+async function submitRequest(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const lbl = document.getElementById('submitLabel');
+  const orig = lbl.textContent;
+  btn.disabled = true; lbl.textContent = 'Processing…';
+  btn.querySelector('i').className = 'fa-solid fa-circle-notch fa-spin';
+  const body = {
+    origin:              document.getElementById('f-origin').value.trim(),
+    destination:         document.getElementById('f-dest').value.trim(),
+    priority:            _priority,
+    vehicle_type:        document.getElementById('f-vehicle-type').value    || undefined,
+    functional_category: document.getElementById('f-category').value        || undefined,
+    cargo_type:          document.getElementById('f-cargo-type').value      || undefined,
+    cargo_weight:        document.getElementById('f-cargo-weight').value.trim() || undefined,
+    passenger_count:     document.getElementById('f-passengers').value      || undefined,
+    requested_date:      document.getElementById('f-date').value            || undefined,
+    notes:               document.getElementById('f-notes').value.trim()    || undefined,
+    distance_km:         document.getElementById('f-distance').value        || undefined
+  };
+  try {
+    const res  = await fetch('/api/dispatch/auto-assign', { method:'POST', headers:authH, body:JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    const v = data.assigned?.vehicle;
+    const d = data.assigned?.driver;
+    const dName = d?.users?.full_name || d?.users?.email || '';
+    if (data.autoAssigned) {
+      const intel = data.intelligence || {};
+      const parts = [];
+      if (intel.trip_classification) parts.push(intel.trip_classification.toUpperCase());
+      if (intel.is_long_trip)        parts.push('Long Haul');
+      if (intel.vip_required)        parts.push('VIP');
+      showToast(
+        `🚀 ${data.request.ticket_number} — Dispatched!`,
+        `${v?.make} ${v?.model} · Driver: ${dName}${parts.length?' ['+parts.join(' · ')+']':''}`,
+        'dispatch'
+      );
+      renderPreview(v, d, data.intelligence);
+    } else {
+      showToast(`${data.request.ticket_number} — Queued`, 'No vehicle/driver available now — pending.', 'warning');
+    }
+    document.getElementById('rideForm').reset();
+    selectPriority('standard', 'pc-standard');
+    document.getElementById('distBadge').classList.remove('visible');
+    updateSummary();
+    loadRecent();
+    _pendingFormData = null;
+    hideSuggestionBar();
+  } catch (err) {
+    showToast('Submission Failed', err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    lbl.textContent = orig;
+    btn.querySelector('i').className = 'fa-solid fa-rocket';
+  }
+}
+
+/* ── Recent ── */
+async function loadRecent() {
+  const tbody = document.getElementById('recentBody');
+  try {
+    const [histRes, pendRes] = await Promise.all([
+      fetch('/api/dispatch/history', { headers: authH }),
+      fetch('/api/dispatch/pending',  { headers: authH })
+    ]);
+    const hist = await histRes.json();
+    const pend = await pendRes.json();
+    const all = [...(Array.isArray(pend)?pend:[]), ...(Array.isArray(hist)?hist:[])]
+      .sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,10);
+    if (!all.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#94A3B8;">No requests yet. Submit your first one above!</td></tr>`;
+      return;
+    }
+    const pillP = p => {
+      const m = { standard:'standard', high:'high', emergency:'emergency', vip:'vip' };
+      return `<span class="pill pill-${m[p]||'standard'}">${p||'standard'}</span>`;
+    };
+    const pillS = s => {
+      const m = { active:'active', pending:'pending', completed:'completed', rejected:'rejected' };
+      return `<span class="pill pill-${m[s]||'pending'}">${s||'pending'}</span>`;
+    };
+    tbody.innerHTML = all.map(r => {
+      const veh = r.vehicle ? `${r.vehicle.make} ${r.vehicle.model}<br><span style="font-size:.72rem;color:var(--muted);">${r.vehicle.registration_number||''}</span>` : '<span style="color:#94A3B8;">—</span>';
+      const drv = r.driver?.full_name || r.driver?.email || '<span style="color:#94A3B8;">—</span>';
+      const dt  = r.requested_date
+        ? new Date(r.requested_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})
+        : new Date(r.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+      return `<tr>
+        <td><span style="font-family:'Outfit';font-weight:700;color:var(--accent);">${r.ticket_number||'—'}</span></td>
+        <td style="max-width:170px;"><span style="font-weight:500;">${r.origin||'—'}</span><span style="color:var(--muted);"> → </span><span style="font-weight:500;">${r.destination||'—'}</span></td>
+        <td>${pillP(r.priority)}</td>
+        <td>${veh}</td>
+        <td>${drv}</td>
+        <td style="white-space:nowrap;">${dt}</td>
+        <td>${pillS(r.status)}</td>
+      </tr>`;
+    }).join('');
+  } catch {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--danger);">Failed to load.</td></tr>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   BOOKSMART AI CHATBOT ENGINE
+══════════════════════════════════════════════════ */
+let chatOpen   = false;
+let _chatMsgs  = [];           // {role:'user'|'assistant', content:'...'}
+let _typing    = false;
+let _pendingFormData = null;   // form data waiting to be applied
+let _badgeCount = 0;
+let _chatInitialized = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const win = document.getElementById('chatWindow');
+  const fab = document.getElementById('aiFab');
+  const ring = document.getElementById('fabRing');
+  win.classList.toggle('open', chatOpen);
+  fab.querySelector('i').className = chatOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-robot';
+  ring.style.display = chatOpen ? 'none' : '';
+  if (chatOpen) {
+    // Clear badge
+    _badgeCount = 0;
+    document.getElementById('fabBadge').style.display = 'none';
+    if (!_chatInitialized) {
+      _chatInitialized = true;
+      initChat();
+    } else {
+      scrollChatBottom();
+    }
+  }
+}
+
+async function initChat() {
+  // Render greeting from server (no Gemini call for greeting)
+  try {
+    const res  = await fetch('/api/ai/greeting', { headers: authH });
+    const data = await res.json();
+    appendMsg('ai', data.reply || "Hi! I'm BookSmart. Where are you heading — what's the pickup and destination?");
+  } catch {
+    appendMsg('ai', "Hi! I'm BookSmart, your intelligent trip assistant 🚀 Where would you like to travel from and to?");
+  }
+}
+
+function appendMsg(role, content, withApplyBtn = false) {
+  const msgs = document.getElementById('chatMessages');
+  const div  = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = 'msg-avatar ' + (role === 'user' ? 'user' : 'ai');
+  avatarDiv.innerHTML = role === 'user' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-brain"></i>';
+
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = 'msg-bubble';
+  bubbleDiv.textContent = content;
+
+  if (withApplyBtn && _pendingFormData) {
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'apply-btn';
+    applyBtn.style.marginTop = '10px';
+    applyBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Apply to Form';
+    applyBtn.onclick = applyAISuggestion;
+    bubbleDiv.appendChild(applyBtn);
+
+    const hint = document.createElement('div');
+    hint.className = 'apply-hint';
+    hint.textContent = 'Tap above to auto-fill all fields';
+    bubbleDiv.appendChild(hint);
+  }
+
+  div.appendChild(avatarDiv);
+  div.appendChild(bubbleDiv);
+  msgs.appendChild(div);
+  scrollChatBottom();
+  return div;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const wrap = document.createElement('div');
+  wrap.className = 'typing-wrap';
+  wrap.id = 'typingWrap';
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ai';
+  avatar.innerHTML = '<i class="fa-solid fa-brain"></i>';
+  const bubble = document.createElement('div');
+  bubble.className = 'typing-bubble';
+  bubble.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  wrap.appendChild(avatar);
+  wrap.appendChild(bubble);
+  msgs.appendChild(wrap);
+  scrollChatBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingWrap');
+  if (el) el.remove();
+}
+
+function scrollChatBottom() {
+  const msgs = document.getElementById('chatMessages');
+  setTimeout(() => msgs.scrollTo({ top: msgs.scrollHeight, behavior: 'smooth' }), 60);
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text  = input.value.trim();
+  if (!text || _typing) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  appendMsg('user', text);
+
+  _chatMsgs.push({ role: 'user', content: text });
+  _typing = true;
+
+  document.getElementById('chatSend').disabled = true;
+  document.getElementById('quickChips').style.display = 'none';
+  showTyping();
+
+  try {
+    const res  = await fetch('/api/ai/chat', {
+      method:  'POST',
+      headers: authH,
+      body:    JSON.stringify({ messages: _chatMsgs }),
+      signal:  AbortSignal.timeout(20000)
+    });
+    const data = await res.json();
+    removeTyping();
+
+    const reply = data.reply || 'Sorry, I could not process that. Please try again.';
+    _chatMsgs.push({ role: 'assistant', content: reply });
+
+    if (data.formData && data.formData.is_ready) {
+      _pendingFormData = data.formData;
+      appendMsg('ai', reply, true);
+      showSuggestionBar(data.formData);
+      // Show badge if chat is closed
+      if (!chatOpen) {
+        _badgeCount++;
+        document.getElementById('fabBadge').textContent = _badgeCount;
+        document.getElementById('fabBadge').style.display = 'flex';
+      }
+    } else {
+      appendMsg('ai', reply);
+    }
+  } catch (err) {
+    removeTyping();
+    const msg = err.name === 'TimeoutError' || err.name === 'AbortError'
+      ? 'AI is taking a moment. Please try again.'
+      : 'Connection issue. Please try again.';
+    appendMsg('ai', msg);
+  } finally {
+    _typing = false;
+    document.getElementById('chatSend').disabled = false;
+    document.getElementById('chatInput').focus();
+  }
+}
+
+function sendQuick(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResizeInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+/* ── Apply AI suggestion to form ── */
+function showSuggestionBar(fd) {
+  const bar = document.getElementById('aiSuggestionBar');
+  const txt = document.getElementById('aiSuggestionText');
+  const parts = [];
+  if (fd.origin)      parts.push(`From: ${fd.origin}`);
+  if (fd.destination) parts.push(`To: ${fd.destination}`);
+  if (fd.priority && fd.priority !== 'standard') parts.push(fd.priority.toUpperCase());
+  if (fd.vehicle_type) parts.push(fd.vehicle_type);
+  txt.textContent = parts.join(' · ');
+  bar.style.display = 'flex';
+  bar.style.animation = 'fadeUp .4s ease-out';
+}
+
+function hideSuggestionBar() {
+  document.getElementById('aiSuggestionBar').style.display = 'none';
+}
+
+function applyAISuggestion() {
+  if (!_pendingFormData) return;
+  const fd = _pendingFormData;
+
+  function fillWithAnim(id, value) {
+    const el = document.getElementById(id);
+    if (!el || value === undefined || value === null || value === '') return;
+    // For select elements, check if option exists
+    if (el.tagName === 'SELECT') {
+      const hasOpt = [...el.options].some(o => o.value === String(value));
+      if (hasOpt) el.value = String(value);
+      else return;
+    } else {
+      el.value = String(value);
+    }
+    el.classList.remove('ai-filled');
+    void el.offsetWidth; // reflow
+    el.classList.add('ai-filled');
+    setTimeout(() => el.classList.remove('ai-filled'), 1000);
+  }
+
+  // Fill fields with delay cascade for a satisfying effect
+  const fills = [
+    ['f-origin',       fd.origin],
+    ['f-dest',         fd.destination],
+    ['f-distance',     fd.distance_km != null ? String(fd.distance_km) : null],
+    ['f-vehicle-type', fd.vehicle_type],
+    ['f-category',     fd.functional_category],
+    ['f-cargo-type',   fd.cargo_type],
+    ['f-cargo-weight', fd.cargo_weight],
+    ['f-passengers',   fd.passenger_count != null ? String(fd.passenger_count) : null],
+    ['f-notes',        fd.notes],
+  ];
+
+  fills.forEach(([id, val], i) => {
+    setTimeout(() => fillWithAnim(id, val), i * 80);
+  });
+
+  // Select priority after all other fills (smooth cascade)
+  setTimeout(() => {
+    if (fd.priority) {
+      selectPriority(fd.priority, 'pc-' + fd.priority);
+    }
+    updateDistBadge();
+    updateSummary();
+    refreshPreview();
+    showToast('✨ Form Filled!', 'AI has filled all available fields. Review and submit.', 'dispatch');
+    // Scroll to form
+    document.getElementById('rideForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, fills.length * 80 + 100);
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', () => {
+  updatePriorityMeter();
+  updateSummary();
+  loadRecent();
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value = today;
+
+  ['f-distance','f-passengers','f-cargo-type','f-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => refreshPreview());
+  });
+
+  // Show chat badge after 2s to encourage opening
+  setTimeout(() => {
+    if (!chatOpen && !_chatInitialized) {
+      _badgeCount = 1;
+      document.getElementById('fabBadge').textContent = '1';
+      document.getElementById('fabBadge').style.display = 'flex';
+    }
+  }, 2000);
+});
+</script>
+</body>
+</html>
