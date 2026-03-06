@@ -408,7 +408,7 @@ exports.createTicket = async (req, res) => {
                 subject,
                 description,
                 status:      'open',
-                priority:    'medium'
+                priority:    req.body.priority || 'medium'
             }])
             .select();
 

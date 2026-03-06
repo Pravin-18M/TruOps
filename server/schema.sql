@@ -235,17 +235,25 @@
     -- Raised by drivers; visible to managers/admins on fleet dashboard.
     -- Contains emergency SOS alerts (category = 'Emergency SOS') as well.
     CREATE TABLE IF NOT EXISTS support_tickets (
-        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        driver_id   UUID REFERENCES users(id) ON DELETE CASCADE,
-        category    TEXT DEFAULT 'Other',           -- 'Trip Issue','Vehicle Issue','Document Help','Emergency SOS','Other'
-        subject     TEXT NOT NULL,
-        description TEXT,
-        status      TEXT DEFAULT 'open',            -- 'open','in-progress','resolved','closed'
-        priority    TEXT DEFAULT 'medium',          -- 'high','medium','low'
-        created_at  TIMESTAMPTZ DEFAULT NOW(),
-        updated_at  TIMESTAMPTZ DEFAULT NOW()
+        id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        driver_id     UUID REFERENCES users(id) ON DELETE CASCADE,
+        category      TEXT DEFAULT 'Other',           -- 'Trip Issue','Vehicle Issue','Document Help','Emergency SOS','Other'
+        subject       TEXT NOT NULL,
+        description   TEXT,
+        status        TEXT DEFAULT 'open',            -- 'open','in-progress','resolved','closed'
+        priority      TEXT DEFAULT 'medium',          -- 'high','medium','low','critical'
+        manager_notes TEXT DEFAULT NULL,              -- resolution notes from manager
+        resolved_by   UUID REFERENCES users(id) DEFAULT NULL,  -- manager who resolved
+        resolved_at   TIMESTAMPTZ DEFAULT NULL,       -- when resolved/closed
+        created_at    TIMESTAMPTZ DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ DEFAULT NOW()
     );
     ALTER TABLE support_tickets DISABLE ROW LEVEL SECURITY;
+
+    -- Add columns if table already exists (idempotent)
+    ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS manager_notes TEXT DEFAULT NULL;
+    ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS resolved_by   UUID REFERENCES users(id) DEFAULT NULL;
+    ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS resolved_at   TIMESTAMPTZ DEFAULT NULL;
 
     -- ═══════════════════════════════════════════════════════════════════════════
     -- ── VEHICLE MAINTENANCE & SERVICE TRACKING SYSTEM (v2) ──────────────────

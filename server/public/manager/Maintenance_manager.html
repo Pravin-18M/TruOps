@@ -161,6 +161,7 @@ header{height:var(--header-height);background:rgba(255,255,255,.94);backdrop-fil
     <a href="View_fleet_manager.html" class="nav-item"><i class="fa-solid fa-truck-front"></i> View Fleet</a>
     <a href="Drivers_manager.html" class="nav-item"><i class="fa-solid fa-id-card"></i> View Drivers</a>
     <a href="Maintenance_manager.html" class="nav-item active"><i class="fa-solid fa-wrench"></i> Maintenance</a>
+    <a href="Tickets_manager.html" class="nav-item"><i class="fa-solid fa-headset"></i> Support Tickets</a>
   </nav>
   <div class="nav-spacer"></div>
   <a href="#" onclick="logout()" class="nav-item" style="color:var(--danger)"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</a>
@@ -692,7 +693,7 @@ async function loadSchedules(){
         const v=s.vehicle?esc(s.vehicle.registration_number)+' '+esc(s.vehicle.make):'';
         const intv=[s.interval_km?Number(s.interval_km).toLocaleString()+' km':'',s.interval_days?s.interval_days+'d':''].filter(Boolean).join(' / ')||'-';
         const st=s.status==='overdue'?'b-err':s.status==='upcoming'?'b-warn':'b-ok';
-        return '<tr><td style="font-weight:600">'+v+'</td><td>'+(labels[s.service_type]||s.service_type)+'</td><td>'+intv+'</td><td>'+fmt(s.last_service_date)+'</td><td>'+fmt(s.next_due_date)+'</td><td><span class="badge '+st+'">'+s.status+'</span></td><td><button class="btn-danger" onclick="deleteSchedule(\''+s.id+'\')"><i class="fa-solid fa-trash"></i></button></td></tr>';
+        return '<tr><td style="font-weight:600">'+v+'</td><td>'+(labels[s.service_type]||s.service_type)+'</td><td>'+intv+'</td><td>'+fmt(s.last_service_date)+'</td><td>'+fmt(s.next_due_date)+'</td><td><span class="badge '+st+'">'+s.status+'</span></td><td style="display:flex;gap:6px;align-items:center">'+(s.status!=='completed'?'<button class="btn-sm" style="background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;font-size:.75rem" onclick="completeSchedule(\''+s.id+'\',\''+esc(labels[s.service_type]||s.service_type)+'\',\''+v.replace(/'/g,'')+'\')" title="Mark service as completed"><i class="fa-solid fa-check-circle"></i> Done</button>':'')+'<button class="btn-danger" onclick="deleteSchedule(\''+s.id+'\')"><i class="fa-solid fa-trash"></i></button></td></tr>';
       }).join('')+'</tbody></table>';
   }catch(e){el.innerHTML='<div style="color:var(--danger);padding:1rem">Failed: '+esc(e.message)+'</div>';}
 }
@@ -708,6 +709,7 @@ async function saveSchedule(){
   finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Save';}
 }
 async function deleteSchedule(id){if(!confirm('Delete schedule?'))return;try{await api('/maintenance/schedules/'+id,{method:'DELETE'});toast('Deleted.');tabLoaded.schedules=false;loadSchedules();}catch(e){toast(e.message,false);}}
+async function completeSchedule(id,svcName,vehName){const kmStr=prompt('Service completed for '+svcName+' on '+vehName+'.\n\nEnter current odometer reading (km) or leave blank:');if(kmStr===null)return;try{await api('/maintenance/schedules/'+id+'/complete',{method:'PATCH',body:JSON.stringify({service_km:kmStr||null})});toast('Service marked as completed! Next cycle scheduled.');tabLoaded.schedules=false;tabLoaded.calendar=false;tabLoaded.overview=false;loadSchedules();}catch(e){toast(e.message,false);}}
 
 // HISTORY
 async function loadHistory(){

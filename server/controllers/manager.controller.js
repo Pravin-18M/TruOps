@@ -495,6 +495,48 @@ exports.deletePreventiveSchedule = async (req, res) => {
     }
 };
 
+exports.completePreventiveSchedule = async (req, res) => {
+    try {
+        const { scheduleId } = req.params;
+        const { service_km } = req.body;
+
+        // Fetch current schedule
+        const { data: sch, error: fetchErr } = await supabase
+            .from('preventive_schedules')
+            .select('*')
+            .eq('id', scheduleId)
+            .single();
+        if (fetchErr || !sch) return res.status(404).json({ error: 'Schedule not found.' });
+
+        const today = new Date().toISOString().split('T')[0];
+        const currentKm = service_km ? parseFloat(service_km) : (sch.next_due_km || sch.last_service_km || 0);
+
+        // Compute next cycle
+        const next_due_km = sch.interval_km ? currentKm + parseFloat(sch.interval_km) : sch.next_due_km;
+        const next_due_date = sch.interval_days
+            ? new Date(Date.now() + sch.interval_days * 86400000).toISOString().split('T')[0]
+            : sch.next_due_date;
+
+        const { data, error } = await supabase
+            .from('preventive_schedules')
+            .update({
+                last_service_date: today,
+                last_service_km:   currentKm,
+                next_due_km,
+                next_due_date,
+                status: 'active',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', scheduleId)
+            .select('*, vehicle:vehicles(make, model, registration_number)');
+
+        if (error) return res.status(500).json({ error: error.message });
+        res.json({ message: 'Service marked as completed. Next cycle scheduled.', schedule: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to complete schedule.' });
+    }
+};
+
 // ── VEHICLE COMPONENTS ────────────────────────────────────────────────────────
 exports.getVehicleComponents = async (req, res) => {
     try {
@@ -809,6 +851,84 @@ exports.getOrderById = async (req, res) => {
 };
 
 // ── SAVE INVOICE DETAILS (manager fills in final cost + invoice number) ───────
+// ── SUPPORT TICKETS ───────────────────────────────────────────────────────────
+exports.getAllTickets = async (req, res) => {
+    try {
+        const { status, priority, category } = req.query;
+
+        let query = supabase
+            .from('support_tickets')
+            .select('*, driver:users!driver_id(full_name, email, avatar_url), resolver:users!resolved_by(full_name)')
+            .order('created_at', { ascending: false });
+
+        if (status)   query = query.eq('status', status);
+        if (priority) query = query.eq('priority', priority);
+        if (category) query = query.eq('category', category);
+
+        const { data, error } = await query;
+        if (error) return res.status(500).json({ error: error.message });
+        res.json(data || []);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch tickets.' });
+    }
+};
+
+exports.getTicketStats = async (req, res) => {
+    try {
+        const { data: all, error } = await supabase
+            .from('support_tickets')
+            .select('id, status, priority, category');
+        if (error) return res.status(500).json({ error: error.message });
+
+        const tickets = all || [];
+        const open       = tickets.filter(t => t.status === 'open').length;
+        const inProgress = tickets.filter(t => t.status === 'in-progress').length;
+        const resolved   = tickets.filter(t => t.status === 'resolved').length;
+        const closed     = tickets.filter(t => t.status === 'closed').length;
+        const critical   = tickets.filter(t => t.priority === 'critical' && t.status !== 'closed' && t.status !== 'resolved').length;
+        const sos        = tickets.filter(t => t.category === 'Emergency SOS' && t.status !== 'closed' && t.status !== 'resolved').length;
+
+        res.json({ total: tickets.length, open, inProgress, resolved, closed, critical, sos });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch ticket stats.' });
+    }
+};
+
+exports.updateTicket = async (req, res) => {
+    try {
+        const { ticketId } = req.params;
+        const { status, manager_notes, priority } = req.body;
+        const managerId   = req.user.id;
+
+        const allowed = ['open', 'in-progress', 'resolved', 'closed'];
+        if (status && !allowed.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status. Allowed: ' + allowed.join(', ') });
+        }
+
+        const update = { updated_at: new Date().toISOString() };
+        if (status)        update.status        = status;
+        if (manager_notes !== undefined) update.manager_notes = manager_notes;
+        if (priority)      update.priority      = priority;
+
+        if (status === 'resolved' || status === 'closed') {
+            update.resolved_by = managerId;
+            update.resolved_at = new Date().toISOString();
+        }
+
+        const { data, error } = await supabase
+            .from('support_tickets')
+            .update(update)
+            .eq('id', ticketId)
+            .select('*, driver:users!driver_id(full_name, email), resolver:users!resolved_by(full_name)');
+
+        if (error) return res.status(500).json({ error: error.message });
+        if (!data || !data.length) return res.status(404).json({ error: 'Ticket not found.' });
+        res.json({ message: 'Ticket updated.', ticket: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update ticket.' });
+    }
+};
+
 exports.saveOrderInvoice = async (req, res) => {
     try {
         const { orderId } = req.params;

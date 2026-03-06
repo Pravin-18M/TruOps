@@ -175,8 +175,8 @@ header{height:var(--header-height);background:rgba(255,255,255,.88);backdrop-fil
         <div class="pt"><i class="fa-solid fa-inbox" style="color:var(--success)"></i>My Tickets</div>
         <button onclick="loadTickets()" style="background:transparent;border:none;font-size:.82rem;color:var(--accent);cursor:pointer;font-weight:600;font-family:'Inter',sans-serif"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
       </div>
-      <div style="overflow-x:auto"><table class="dtbl"><thead><tr><th>#</th><th>Category</th><th>Subject</th><th>Priority</th><th>Status</th><th>Raised</th></tr></thead>
-      <tbody id="ticketsBody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></td></tr></tbody></table></div>
+      <div style="overflow-x:auto"><table class="dtbl"><thead><tr><th>#</th><th>Category</th><th>Subject</th><th>Priority</th><th>Status</th><th>Raised</th><th>Response</th></tr></thead>
+      <tbody id="ticketsBody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></td></tr></tbody></table></div>
     </div>
   </div>
 </main>
@@ -232,18 +232,22 @@ async function loadTickets(){
   try{
     const d=await api('/support/tickets');const arr=Array.isArray(d)?d:d.tickets||[];
     const tbody=document.getElementById('ticketsBody');
-    if(!arr.length){tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:.87rem">No tickets raised yet.</td></tr>`;return;}
+    if(!arr.length){tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);font-size:.87rem">No tickets raised yet.</td></tr>`;return;}
     const pc={low:'bmo',medium:'bb',high:'bo',critical:'br'};
-    const sc={open:'bb',in_progress:'bp',resolved:'bg',closed:'bmo'};
-    tbody.innerHTML=arr.map(t=>`<tr>
+    const sc={open:'bb','in-progress':'bp',resolved:'bg',closed:'bmo'};
+    tbody.innerHTML=arr.map(t=>{
+      const hasNotes=!!t.manager_notes;
+      const resolvedAt=t.resolved_at?new Date(t.resolved_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'';
+      return `<tr>
       <td style="font-size:.78rem;color:var(--text-muted)">#${esc(t.id?.toString().slice(-5)||'—')}</td>
       <td style="font-size:.83rem">${esc(t.category||'—')}</td>
       <td style="font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.subject||'—')}</td>
       <td><span class="badge ${pc[t.priority]||'bmo'}">${(t.priority||'—').toUpperCase()}</span></td>
-      <td><span class="badge ${sc[t.status]||'bb'}">${(t.status||'open').replace('_',' ').toUpperCase()}</span></td>
+      <td><span class="badge ${sc[t.status]||'bb'}">${(t.status||'open').replace(/-/g,' ').toUpperCase()}</span></td>
       <td style="font-size:.78rem;color:var(--text-muted)">${fmt(t.created_at)}</td>
-    </tr>`).join('');
-  }catch{document.getElementById('ticketsBody').innerHTML=`<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.85rem">Could not load tickets.</td></tr>`;}
+      <td>${hasNotes?`<span style="cursor:pointer;color:var(--accent);font-size:.82rem;font-weight:600" onclick="this.parentElement.querySelector('.mgr-note').style.display=this.parentElement.querySelector('.mgr-note').style.display==='none'?'block':'none'"><i class="fa-solid fa-comment-dots"></i> View</span><div class="mgr-note" style="display:none;margin-top:6px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:8px 10px;font-size:.82rem;color:var(--text-main);max-width:260px;white-space:pre-wrap"><strong style="color:var(--accent);font-size:.76rem">Manager Notes:</strong><br>${esc(t.manager_notes)}${resolvedAt?'<br><span style="font-size:.74rem;color:var(--text-muted);margin-top:4px;display:inline-block">Resolved: '+resolvedAt+'</span>':''}</div>`:`<span style="font-size:.78rem;color:var(--text-muted)">—</span>`}</td>
+    </tr>`}).join('');
+  }catch{document.getElementById('ticketsBody').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:.85rem">Could not load tickets.</td></tr>`;}
 }
 
 async function submitTicket(){

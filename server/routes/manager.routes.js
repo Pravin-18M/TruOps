@@ -57,6 +57,7 @@ router.get('/maintenance/history',                  guard, ctrl.getServiceHistor
 // Preventive schedules
 router.get('/maintenance/schedules',                guard, ctrl.getPreventiveSchedules);
 router.post('/maintenance/schedules',               guard, ctrl.createPreventiveSchedule);
+router.patch('/maintenance/schedules/:scheduleId/complete', guard, ctrl.completePreventiveSchedule);
 router.delete('/maintenance/schedules/:scheduleId', guard, ctrl.deletePreventiveSchedule);
 
 // Vehicle components
@@ -79,6 +80,11 @@ router.get('/maintenance/downtime',                 guard, ctrl.getDowntimeStats
 
 // Calendar events aggregation
 router.get('/maintenance/calendar',                 guard, ctrl.getCalendarEvents);
+
+// ── SUPPORT TICKETS ──────────────────────────────────────────────────────────
+router.get('/tickets',              guard, ctrl.getAllTickets);
+router.get('/tickets/stats',        guard, ctrl.getTicketStats);
+router.patch('/tickets/:ticketId',  guard, ctrl.updateTicket);
 
 // Single order (for invoice modal pre-fill) — must come AFTER all specific named routes
 router.get('/maintenance/:orderId',                 guard, ctrl.getOrderById);

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Support Tickets | TruFleet Manager</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚚</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+:root{--primary:#0F172A;--accent:#2563EB;--accent-soft:#EFF6FF;--bg-body:#F1F5F9;--bg-card:#FFFFFF;--text-main:#1E293B;--text-muted:#64748B;--success:#10B981;--warning:#F59E0B;--danger:#EF4444;--sidebar-width:280px;--sidebar-collapsed:80px;--header-height:80px;--shadow-card:0 4px 6px -1px rgba(0,0,0,.05);--shadow-hover:0 20px 25px -5px rgba(0,0,0,.07);--radius-lg:20px;--radius-md:12px;--spring:all .4s cubic-bezier(.34,1.56,.64,1);--smooth:all .3s cubic-bezier(.4,0,.2,1)}
+*{margin:0;padding:0;box-sizing:border-box;outline:none}
+body{font-family:'Inter',sans-serif;background:var(--bg-body);color:var(--text-main);overflow-x:hidden}
+.app{display:grid;grid-template-columns:var(--sidebar-width) 1fr;transition:grid-template-columns .4s ease;min-height:100vh}
+.app.collapsed{grid-template-columns:var(--sidebar-collapsed) 1fr}
+aside{background:var(--bg-card);border-right:1px solid #E2E8F0;padding:1.5rem 1rem;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:50;transition:var(--smooth);overflow:hidden}
+.brand-logo{display:flex;align-items:center;gap:12px;padding:0 1rem 2.5rem;color:var(--primary);text-decoration:none;font-family:'Outfit',sans-serif;font-weight:700;font-size:1.4rem;white-space:nowrap;overflow:hidden}
+.brand-text{transition:opacity .2s}
+.app.collapsed .brand-text{opacity:0;pointer-events:none;width:0;overflow:hidden}
+.nav-menu{display:flex;flex-direction:column;gap:.35rem;flex:1;min-width:0}
+.nav-item{display:flex;align-items:center;gap:16px;padding:11px 16px;color:var(--text-muted);text-decoration:none;border-radius:10px;transition:.25s;font-weight:500;white-space:nowrap;overflow:hidden;font-size:.9rem}
+.nav-item:hover,.nav-item.active{background:#EFF6FF;color:var(--accent)}
+.nav-item i{font-size:1.05rem;min-width:22px;text-align:center;flex-shrink:0}
+main{padding:0;overflow-y:auto;height:100vh}
+header{height:var(--header-height);background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,.6);position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:0 2rem}
+.hdr-left{display:flex;align-items:center;gap:1rem}
+.toggle-btn{background:transparent;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-muted);padding:8px;border-radius:8px;transition:.2s}
+.toggle-btn:hover{background:var(--accent-soft);color:var(--accent)}
+.page-title{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.25rem;color:var(--primary)}
+.page-sub{font-size:.75rem;color:var(--text-muted);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:1.25rem}
+.profile-chip{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 7px;background:#fff;border:1px solid #E2E8F0;border-radius:30px;cursor:pointer;transition:var(--smooth)}
+.profile-chip:hover{border-color:var(--accent)}
+.profile-img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+.pname{font-weight:600;font-size:.85rem;color:var(--primary);line-height:1.15}
+.prole{font-size:.7rem;color:var(--text-muted)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;animation:ldot 2.2s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.3}}
+.content{padding:2rem;max-width:1400px;margin:0 auto;opacity:0;animation:fadeIn .55s ease-out forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.75rem}
+.kpi-card{background:var(--bg-card);border-radius:var(--radius-md);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.4);padding:1.15rem 1.25rem;display:flex;flex-direction:column;gap:4px;transition:var(--spring)}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
+.kpi-val{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.7rem;color:var(--primary);line-height:1.1}
+.kpi-lbl{font-size:.78rem;font-weight:500;color:var(--text-muted)}
+.kpi-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;margin-bottom:4px}
+.ic-b{background:#EFF6FF;color:#2563EB}.ic-r{background:#FEF2F2;color:#EF4444}.ic-g{background:#ECFDF5;color:#10B981}.ic-w{background:#FFFBEB;color:#F59E0B}.ic-p{background:#F5F3FF;color:#7C3AED}
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.filter-bar select,.filter-bar input{padding:8px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.85rem;font-family:'Inter',sans-serif;color:var(--text-main);background:#fff;transition:border-color .2s}
+.filter-bar select:focus,.filter-bar input:focus{border-color:var(--accent)}
+.filter-bar input{min-width:220px}
+/* SOS BANNER */
+.sos-banner{background:linear-gradient(135deg,#991B1B 0%,#DC2626 40%,#EF4444 100%);border-radius:var(--radius-md);padding:1rem 1.5rem;margin-bottom:1.25rem;display:none;align-items:center;gap:1rem;color:#fff;box-shadow:0 6px 20px rgba(239,68,68,.3);animation:sosBlink 1.2s infinite}
+.sos-banner.show{display:flex}
+@keyframes sosBlink{0%,100%{opacity:1}50%{opacity:.85}}
+.sos-banner i{font-size:1.3rem}
+.sos-banner .sos-count{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.3rem}
+.sos-banner .sos-label{font-size:.88rem;font-weight:500}
+/* PANELS */
+.panel{background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);border:1px solid rgba(226,232,240,.5);padding:1.5rem;margin-bottom:1.5rem}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.pt{font-family:'Outfit',sans-serif;font-weight:600;font-size:1.05rem;color:var(--primary);display:flex;align-items:center;gap:8px}
+/* TABLE */
+.dtbl{width:100%;border-collapse:collapse}
+.dtbl th{text-align:left;padding:.65rem .85rem;font-size:.76rem;color:var(--text-muted);font-weight:600;border-bottom:1.5px solid #E2E8F0;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.dtbl td{padding:.7rem .85rem;font-size:.87rem;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+.dtbl tbody tr{transition:background .15s;cursor:pointer}
+.dtbl tbody tr:hover td{background:#F8FAFC}
+.badge{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+.bg{background:#ECFDF5;color:#059669}.bo{background:#FFFBEB;color:#D97706}.br{background:#FEF2F2;color:#DC2626}.bb{background:#EFF6FF;color:#2563EB}.bmo{background:#F1F5F9;color:#64748B}.bp{background:#F5F3FF;color:#7C3AED}.bsos{background:#DC2626;color:#fff}
+/* TICKET DETAIL DRAWER */
+.drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer-overlay.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:-540px;width:520px;max-width:92vw;height:100vh;background:var(--bg-card);z-index:210;box-shadow:-8px 0 30px rgba(0,0,0,.12);display:flex;flex-direction:column;transition:right .35s cubic-bezier(.4,0,.2,1)}
+.drawer.show{right:0}
+.drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid #E2E8F0;flex-shrink:0}
+.drawer-hdr .dt{font-family:'Outfit',sans-serif;font-weight:700;font-size:1.1rem;color:var(--primary)}
+.close-btn{background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--text-muted);padding:6px;border-radius:6px;transition:.2s}
+.close-btn:hover{background:var(--accent-soft);color:var(--accent)}
+.drawer-body{flex:1;overflow-y:auto;padding:1.5rem}
+.drawer-footer{padding:1rem 1.5rem;border-top:1px solid #E2E8F0;flex-shrink:0;display:flex;gap:.75rem;justify-content:flex-end}
+/* Detail sections */
+.d-section{margin-bottom:1.5rem}
+.d-section-title{font-family:'Outfit',sans-serif;font-weight:600;font-size:.88rem;color:var(--primary);margin-bottom:.65rem;display:flex;align-items:center;gap:6px}
+.d-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid #F8FAFC}
+.d-row:last-child{border-bottom:none}
+.d-label{font-size:.8rem;font-weight:500;color:var(--text-muted);min-width:110px}
+.d-value{font-size:.87rem;font-weight:500;color:var(--text-main);text-align:right;max-width:280px;word-break:break-word}
+.d-desc{background:#F8FAFC;border-radius:8px;padding:.85rem 1rem;font-size:.86rem;line-height:1.6;color:var(--text-main);border:1px solid #E2E8F0;margin-top:.4rem;white-space:pre-wrap}
+.d-notes{margin-top:.65rem}
+.d-notes textarea{width:100%;min-height:90px;resize:vertical;padding:10px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.86rem;font-family:'Inter',sans-serif;color:var(--text-main);transition:border-color .2s}
+.d-notes textarea:focus{border-color:var(--accent)}
+.d-status-btns{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem}
+.s-btn{padding:7px 16px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:.2s;font-family:'Inter',sans-serif}
+.s-btn:hover{transform:translateY(-1px)}
+.s-btn.s-open{background:#EFF6FF;color:#2563EB;border-color:#BFDBFE}
+.s-btn.s-inprog{background:#F5F3FF;color:#7C3AED;border-color:#DDD6FE}
+.s-btn.s-resolve{background:#ECFDF5;color:#059669;border-color:#A7F3D0}
+.s-btn.s-close{background:#F1F5F9;color:#64748B;border-color:#CBD5E1}
+.s-btn.active{box-shadow:0 0 0 2px var(--accent);transform:translateY(-1px)}
+/* Priority select in drawer */
+.d-pri-sel{padding:6px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.84rem;font-family:'Inter',sans-serif;color:var(--text-main);background:#fff}
+.d-pri-sel:focus{border-color:var(--accent)}
+/* BTNS */
+.btn-pri{padding:9px 22px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-size:.87rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:7px;transition:.2s}
+.btn-pri:hover{background:#1D4ED8}.btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.btn-sec{padding:9px 22px;border:1.5px solid #E2E8F0;border-radius:9px;background:transparent;color:var(--text-main);font-size:.87rem;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-sec:hover{background:#F8FAFC}
+.btn-sm{padding:5px 12px;font-size:.78rem;font-weight:600;border-radius:6px;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:.2s}
+/* TIMELINE */
+.timeline-item{display:flex;gap:10px;margin-bottom:.75rem}
+.timeline-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.timeline-text{font-size:.82rem;color:var(--text-main);line-height:1.45}
+.timeline-time{font-size:.72rem;color:var(--text-muted);margin-top:1px}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:12px;background:#1E293B;color:#fff;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:8px;max-width:380px;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateY(0)}
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:3rem;color:var(--text-muted)}
+.empty-state i{font-size:2.5rem;margin-bottom:.75rem;opacity:.4;display:block}
+.empty-state p{font-size:.9rem}
+/* RESPONSIVE */
+@media(max-width:768px){.app{grid-template-columns:1fr}aside{position:fixed;left:-280px;top:0;height:100%;box-shadow:10px 0 30px rgba(0,0,0,.1)}.app.mobile-open aside{left:0}.kpi-grid{grid-template-columns:repeat(2,1fr)}.filter-bar{flex-direction:column}.filter-bar input{min-width:100%}.drawer{width:100%}}
+@media(max-width:500px){.kpi-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<aside id="sidebar">
+  <a href="Dashboard_manager.html" class="brand-logo"><i class="fa-solid fa-cube" style="font-size:1.8rem;color:var(--accent)"></i><span class="brand-text">Trufleet</span></a>
+  <nav class="nav-menu">
+    <a href="Dashboard_manager.html" class="nav-item"><i class="fa-solid fa-grid-2"></i><span class="brand-text">Dashboard</span></a>
+    <a href="LiveMap_manager.html" class="nav-item"><i class="fa-solid fa-location-dot"></i><span class="brand-text">Live Map</span></a>
+    <a href="View_fleet_manager.html" class="nav-item"><i class="fa-solid fa-truck-front"></i><span class="brand-text">View Fleet</span></a>
+    <a href="Drivers_manager.html" class="nav-item"><i class="fa-solid fa-id-card"></i><span class="brand-text">View Drivers</span></a>
+    <a href="Maintenance_manager.html" class="nav-item"><i class="fa-solid fa-wrench"></i><span class="brand-text">Maintenance</span></a>
+    <a href="Tickets_manager.html" class="nav-item active"><i class="fa-solid fa-headset"></i><span class="brand-text">Support Tickets</span></a>
+    <div style="flex-grow:1"></div>
+    <a href="#" onclick="logout()" class="nav-item" style="color:var(--danger)"><i class="fa-solid fa-arrow-right-from-bracket"></i><span class="brand-text">Logout</span></a>
+  </nav>
+</aside>
+<main>
+  <header>
+    <div class="hdr-left">
+      <button class="toggle-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></button>
+      <div><div class="page-title">Support Tickets</div><div class="page-sub">Monitor, respond &amp; resolve driver issues</div></div>
+    </div>
+    <div class="hdr-right">
+      <div class="profile-chip">
+        <span class="live-dot"></span>
+        <img id="profileImg" class="profile-img" src="" alt=""/>
+        <div><div class="pname" id="profileName">Loading…</div><div class="prole" id="profileRole">Manager</div></div>
+      </div>
+    </div>
+  </header>
+  <div class="content">
+    <!-- SOS ALERTS BANNER -->
+    <div class="sos-banner" id="sosBanner">
+      <i class="fa-solid fa-siren-on fa-beat-fade"></i>
+      <div>
+        <div class="sos-count" id="sosCount">0</div>
+        <div class="sos-label">Active SOS Emergency Alerts</div>
+      </div>
+      <button class="btn-sm" style="margin-left:auto;background:#fff;color:#DC2626;font-weight:700;padding:8px 18px;border-radius:8px" onclick="filterBySos()"><i class="fa-solid fa-eye"></i> View SOS Tickets</button>
+    </div>
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card"><div class="kpi-icon ic-b"><i class="fa-solid fa-ticket"></i></div><span class="kpi-val" id="kTotal">—</span><span class="kpi-lbl">Total Tickets</span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-w"><i class="fa-solid fa-circle-exclamation"></i></div><span class="kpi-val" id="kOpen">—</span><span class="kpi-lbl">Open</span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-p"><i class="fa-solid fa-arrows-spin"></i></div><span class="kpi-val" id="kProgress">—</span><span class="kpi-lbl">In Progress</span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-g"><i class="fa-solid fa-circle-check"></i></div><span class="kpi-val" id="kResolved">—</span><span class="kpi-lbl">Resolved</span></div>
+      <div class="kpi-card"><div class="kpi-icon ic-r"><i class="fa-solid fa-triangle-exclamation"></i></div><span class="kpi-val" id="kCritical">—</span><span class="kpi-lbl">Critical Active</span></div>
+    </div>
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <select id="fStatus" onchange="applyFilters()">
+        <option value="">All Statuses</option>
+        <option value="open" selected>Open</option>
+        <option value="in-progress">In Progress</option>
+        <option value="resolved">Resolved</option>
+        <option value="closed">Closed</option>
+      </select>
+      <select id="fPriority" onchange="applyFilters()">
+        <option value="">All Priorities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <select id="fCategory" onchange="applyFilters()">
+        <option value="">All Categories</option>
+        <option value="Emergency SOS">Emergency SOS</option>
+        <option value="breakdown">Breakdown</option>
+        <option value="accident">Accident</option>
+        <option value="route">Route Issue</option>
+        <option value="cargo">Cargo Issue</option>
+        <option value="payment">Payment / HR</option>
+        <option value="harassment">Harassment</option>
+        <option value="equipment">Equipment</option>
+        <option value="other">Other</option>
+      </select>
+      <input id="fSearch" placeholder="Search tickets by subject or driver…" oninput="applyFilters()"/>
+      <button class="btn-sm" style="background:var(--accent-soft);color:var(--accent);padding:8px 14px;border-radius:8px;border:1.5px solid #BFDBFE" onclick="clearFilters()"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+    </div>
+    <!-- TICKETS TABLE -->
+    <div class="panel" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+        <table class="dtbl">
+          <thead>
+            <tr>
+              <th style="padding-left:1.25rem">Priority</th>
+              <th>Driver</th>
+              <th>Category</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Raised</th>
+              <th>Updated</th>
+              <th style="text-align:center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsBody">
+            <tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p>Loading tickets…</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- DETAIL DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-hdr">
+    <span class="dt" id="drawerTitle">Ticket Details</span>
+    <button class="close-btn" onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drawer-body" id="drawerBody">
+    <!-- Populated dynamically -->
+  </div>
+  <div class="drawer-footer">
+    <button class="btn-sec" onclick="closeDrawer()">Cancel</button>
+    <button class="btn-pri" id="drawerSaveBtn" onclick="saveTicketUpdate()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i id="tIco" class="fa-solid fa-circle-check"></i><span id="tMsg"></span></div>
+
+<script>
+const TOKEN=localStorage.getItem('trufleet_token')||'';
+if(!TOKEN){window.location.href='../login.html';}
+let userInfo={};
+(function(){try{const p=JSON.parse(atob(TOKEN.split('.')[1]));if(!p||!['admin','manager'].includes(p.role)){localStorage.clear();window.location.href='../login.html';}userInfo=p;}catch{localStorage.clear();window.location.href='../login.html';}})();
+
+function logout(){localStorage.clear();window.location.href='../login.html';}
+
+const API_BASE='/api/manager';
+async function api(path,opts={}){
+  const r=await fetch(API_BASE+path,{...opts,headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}});
+  if(r.status===401){localStorage.clear();window.location.href='../login.html';}
+  const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d;
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmt(iso){if(!iso)return'—';const d=new Date(iso);return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});}
+function fmtDate(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+function toast(msg,ok=true){const el=document.getElementById('toast');document.getElementById('tIco').className=ok?'fa-solid fa-circle-check':'fa-solid fa-circle-xmark';el.style.background=ok?'#1E293B':'#EF4444';document.getElementById('tMsg').textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3800);}
+
+// Sidebar
+const app=document.getElementById('app'),sb=document.getElementById('sidebar');
+function toggleSidebar(){if(window.innerWidth<=768)app.classList.toggle('mobile-open');else app.classList.toggle('collapsed');}
+sb.addEventListener('mouseenter',()=>{if(window.innerWidth>768&&app.classList.contains('collapsed')){app.classList.remove('collapsed');sb.dataset.ae='1';}});
+sb.addEventListener('mouseleave',()=>{if(window.innerWidth>768&&sb.dataset.ae==='1'){app.classList.add('collapsed');sb.dataset.ae='0';}});
+
+// Profile
+(async function(){
+  document.getElementById('profileName').textContent=userInfo.full_name||userInfo.email?.split('@')[0]||'Manager';
+  document.getElementById('profileRole').textContent=userInfo.role==='admin'?'Administrator':'Fleet Manager';
+  document.getElementById('profileImg').src=userInfo.avatar_url||'https://ui-avatars.com/api/?name='+encodeURIComponent(userInfo.full_name||'M')+'&background=EFF6FF&color=2563EB&rounded=true';
+})();
+
+// ─── DATA ───
+let allTickets=[];
+let currentTicket=null;
+
+const priClass={critical:'br',high:'bo',medium:'bb',low:'bmo'};
+const staClass={open:'bb','in-progress':'bp',resolved:'bg',closed:'bmo'};
+const catIcons={'Emergency SOS':'fa-siren-on',breakdown:'fa-car-burst',accident:'fa-car-crash',route:'fa-route',cargo:'fa-boxes-stacked',payment:'fa-credit-card',harassment:'fa-shield-halved',equipment:'fa-toolbox',other:'fa-circle-question'};
+
+async function loadStats(){
+  try{
+    const s=await api('/tickets/stats');
+    document.getElementById('kTotal').textContent=s.total;
+    document.getElementById('kOpen').textContent=s.open;
+    document.getElementById('kProgress').textContent=s.inProgress;
+    document.getElementById('kResolved').textContent=s.resolved;
+    document.getElementById('kCritical').textContent=s.critical;
+    const banner=document.getElementById('sosBanner');
+    if(s.sos>0){document.getElementById('sosCount').textContent=s.sos;banner.classList.add('show');}else{banner.classList.remove('show');}
+  }catch{}
+}
+
+async function loadTickets(){
+  try{
+    allTickets=await api('/tickets');
+    applyFilters();
+  }catch(e){
+    document.getElementById('ticketsBody').innerHTML='<tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-circle-xmark" style="color:var(--danger)"></i><p>Failed to load tickets: '+esc(e.message)+'</p></div></td></tr>';
+  }
+}
+
+function applyFilters(){
+  const st=document.getElementById('fStatus').value;
+  const pr=document.getElementById('fPriority').value;
+  const cat=document.getElementById('fCategory').value;
+  const q=document.getElementById('fSearch').value.toLowerCase().trim();
+
+  let filtered=allTickets;
+  if(st)  filtered=filtered.filter(t=>t.status===st);
+  if(pr)  filtered=filtered.filter(t=>t.priority===pr);
+  if(cat) filtered=filtered.filter(t=>t.category===cat);
+  if(q)   filtered=filtered.filter(t=>(t.subject||'').toLowerCase().includes(q)||(t.driver?.full_name||'').toLowerCase().includes(q)||(t.description||'').toLowerCase().includes(q));
+
+  renderTable(filtered);
+}
+
+function clearFilters(){
+  document.getElementById('fStatus').value='';
+  document.getElementById('fPriority').value='';
+  document.getElementById('fCategory').value='';
+  document.getElementById('fSearch').value='';
+  applyFilters();
+}
+
+function filterBySos(){
+  document.getElementById('fStatus').value='';
+  document.getElementById('fPriority').value='';
+  document.getElementById('fCategory').value='Emergency SOS';
+  document.getElementById('fSearch').value='';
+  applyFilters();
+}
+
+function renderTable(tickets){
+  const tbody=document.getElementById('ticketsBody');
+  if(!tickets.length){
+    tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-inbox"></i><p>No tickets match your filters.</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=tickets.map(t=>{
+    const isSos=t.category==='Emergency SOS';
+    const priCls=priClass[t.priority]||'bmo';
+    const staCls=staClass[t.status]||'bb';
+    const driverName=t.driver?.full_name||'Unknown Driver';
+    const catIcon=catIcons[t.category]||catIcons.other;
+    return '<tr onclick="openTicket(\''+t.id+'\')">'
+      +'<td style="padding-left:1.25rem"><span class="badge '+(isSos?'bsos':priCls)+'">'+(isSos?'🚨 SOS':(t.priority||'—').toUpperCase())+'</span></td>'
+      +'<td style="font-weight:500">'+esc(driverName)+'</td>'
+      +'<td><i class="fa-solid '+catIcon+'" style="margin-right:5px;font-size:.8rem;color:var(--text-muted)"></i>'+esc(t.category||'Other')+'</td>'
+      +'<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">'+esc(t.subject)+'</td>'
+      +'<td><span class="badge '+staCls+'">'+(t.status||'open').replace(/-/g,' ').toUpperCase()+'</span></td>'
+      +'<td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap">'+fmt(t.created_at)+'</td>'
+      +'<td style="font-size:.78rem;color:var(--text-muted);white-space:nowrap">'+fmt(t.updated_at)+'</td>'
+      +'<td style="text-align:center"><button class="btn-sm" style="background:var(--accent-soft);color:var(--accent);border:1px solid #BFDBFE" onclick="event.stopPropagation();openTicket(\''+t.id+'\')"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open</button></td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ─── DRAWER ───
+function openTicket(id){
+  const t=allTickets.find(x=>x.id===id);
+  if(!t)return;
+  currentTicket=t;
+  const isSos=t.category==='Emergency SOS';
+  const driverName=t.driver?.full_name||'Unknown';
+  const driverEmail=t.driver?.email||'—';
+  const resolverName=t.resolver?.full_name||'—';
+  const catIcon=catIcons[t.category]||catIcons.other;
+
+  document.getElementById('drawerTitle').innerHTML=(isSos?'<span style="color:#DC2626"><i class="fa-solid fa-siren-on fa-beat-fade"></i> SOS ALERT</span> — ':'')+'Ticket #'+esc(t.id.toString().slice(-6));
+
+  let html='';
+
+  // Ticket info
+  html+='<div class="d-section">';
+  html+='<div class="d-section-title"><i class="fa-solid fa-info-circle" style="color:var(--accent)"></i> Ticket Information</div>';
+  html+='<div class="d-row"><span class="d-label">Subject</span><span class="d-value" style="font-weight:600">'+esc(t.subject)+'</span></div>';
+  html+='<div class="d-row"><span class="d-label">Category</span><span class="d-value"><i class="fa-solid '+catIcon+'" style="margin-right:4px"></i>'+esc(t.category||'Other')+'</span></div>';
+  html+='<div class="d-row"><span class="d-label">Priority</span><span class="d-value"><span class="badge '+(priClass[t.priority]||'bmo')+'">'+(t.priority||'medium').toUpperCase()+'</span></span></div>';
+  html+='<div class="d-row"><span class="d-label">Status</span><span class="d-value"><span class="badge '+(staClass[t.status]||'bb')+'">'+(t.status||'open').replace(/-/g,' ').toUpperCase()+'</span></span></div>';
+  html+='<div class="d-row"><span class="d-label">Raised</span><span class="d-value">'+fmtDate(t.created_at)+'</span></div>';
+  if(t.resolved_at) html+='<div class="d-row"><span class="d-label">Resolved At</span><span class="d-value">'+fmtDate(t.resolved_at)+'</span></div>';
+  if(t.resolver?.full_name) html+='<div class="d-row"><span class="d-label">Resolved By</span><span class="d-value">'+esc(resolverName)+'</span></div>';
+  html+='</div>';
+
+  // Driver info
+  html+='<div class="d-section">';
+  html+='<div class="d-section-title"><i class="fa-solid fa-user" style="color:var(--success)"></i> Driver</div>';
+  html+='<div class="d-row"><span class="d-label">Name</span><span class="d-value" style="font-weight:600">'+esc(driverName)+'</span></div>';
+  html+='<div class="d-row"><span class="d-label">Email</span><span class="d-value">'+esc(driverEmail)+'</span></div>';
+  html+='</div>';
+
+  // Description
+  html+='<div class="d-section">';
+  html+='<div class="d-section-title"><i class="fa-solid fa-align-left" style="color:var(--warning)"></i> Description</div>';
+  html+='<div class="d-desc">'+esc(t.description||'No description provided.')+'</div>';
+  html+='</div>';
+
+  // Manager actions
+  html+='<div class="d-section">';
+  html+='<div class="d-section-title"><i class="fa-solid fa-user-gear" style="color:var(--accent)"></i> Manager Actions</div>';
+
+  // Update priority
+  html+='<div style="margin-bottom:.75rem"><span class="d-label" style="display:block;margin-bottom:4px">Change Priority</span>';
+  html+='<select class="d-pri-sel" id="dPriority">';
+  ['low','medium','high','critical'].forEach(p=>{
+    html+='<option value="'+p+'"'+(t.priority===p?' selected':'')+'>'+p.charAt(0).toUpperCase()+p.slice(1)+'</option>';
+  });
+  html+='</select></div>';
+
+  // Update status
+  html+='<div style="margin-bottom:.75rem"><span class="d-label" style="display:block;margin-bottom:4px">Update Status</span>';
+  html+='<div class="d-status-btns">';
+  html+='<button class="s-btn s-open'+(t.status==='open'?' active':'')+'" onclick="selectStatus(this,\'open\')">Open</button>';
+  html+='<button class="s-btn s-inprog'+(t.status==='in-progress'?' active':'')+'" onclick="selectStatus(this,\'in-progress\')">In Progress</button>';
+  html+='<button class="s-btn s-resolve'+(t.status==='resolved'?' active':'')+'" onclick="selectStatus(this,\'resolved\')">Resolved</button>';
+  html+='<button class="s-btn s-close'+(t.status==='closed'?' active':'')+'" onclick="selectStatus(this,\'closed\')">Closed</button>';
+  html+='</div></div>';
+
+  // Manager notes
+  html+='<div class="d-notes"><span class="d-label" style="display:block;margin-bottom:4px">Manager Notes / Resolution</span>';
+  html+='<textarea id="dNotes" placeholder="Add resolution details, actions taken, or instructions for the driver…">'+esc(t.manager_notes||'')+'</textarea>';
+  html+='</div>';
+
+  html+='</div>';
+
+  document.getElementById('drawerBody').innerHTML=html;
+  document.getElementById('drawerOverlay').classList.add('show');
+  document.getElementById('drawer').classList.add('show');
+}
+
+let selectedStatus=null;
+function selectStatus(btn,status){
+  selectedStatus=status;
+  document.querySelectorAll('.d-status-btns .s-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function closeDrawer(){
+  document.getElementById('drawerOverlay').classList.remove('show');
+  document.getElementById('drawer').classList.remove('show');
+  currentTicket=null;selectedStatus=null;
+}
+
+async function saveTicketUpdate(){
+  if(!currentTicket)return;
+  const btn=document.getElementById('drawerSaveBtn');
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
+
+  const notes=document.getElementById('dNotes').value.trim();
+  const priority=document.getElementById('dPriority').value;
+  const status=selectedStatus||currentTicket.status;
+
+  try{
+    await api('/tickets/'+currentTicket.id,{
+      method:'PATCH',
+      body:JSON.stringify({status,manager_notes:notes||null,priority})
+    });
+    toast('Ticket updated successfully.');
+    closeDrawer();
+    loadTickets();
+    loadStats();
+  }catch(e){
+    toast(e.message,false);
+  }finally{
+    btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Save Changes';
+  }
+}
+
+// ─── INIT ───
+loadStats();
+loadTickets();
+// Auto-refresh every 30s
+setInterval(()=>{loadStats();loadTickets();},30000);
+</script>
+</body>
+</html>
